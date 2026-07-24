@@ -11,413 +11,389 @@
             padding: 0;
             user-select: none;
         }
+
         body {
-            background-color: #1a1a1a;
+            background-color: #050505;
+            color: #ffffff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            color: #fff;
+            height: 100vh;
+            overflow: hidden;
         }
+
         #game-container {
             position: relative;
             width: 800px;
             height: 400px;
-            background: linear-gradient(to bottom, #87CEEB, #E0F6FF);
-            border: 4px solid #333;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: #000000;
+            border: 1px solid #333;
         }
+
         canvas {
             display: block;
+            width: 100%;
+            height: 100%;
         }
-        .overlay {
+
+        /* Overlay UI Screens */
+        .ui-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.65);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
             z-index: 10;
         }
+
         .hidden {
             display: none !important;
         }
+
         h1 {
-            font-size: 48px;
+            font-size: 3rem;
             margin-bottom: 10px;
-            color: #FFF;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
-        p.subtitle {
-            font-size: 18px;
-            margin-bottom: 30px;
-            color: #DDD;
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #ff3333;
+            text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
         }
-        .score-display {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #FFD700;
+
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            color: #aaaaaa;
         }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+        }
+
         button {
             padding: 12px 28px;
-            font-size: 18px;
+            font-size: 1.1rem;
             font-weight: bold;
-            background-color: #ff4757;
-            color: white;
+            color: #000;
+            background: #ffffff;
             border: none;
-            border-radius: 25px;
+            border-radius: 6px;
             cursor: pointer;
-            margin: 8px;
-            transition: transform 0.1s, background-color 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
         }
+
         button:hover {
-            background-color: #ff6b81;
+            background: #e0e0e0;
             transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
-        button:active {
-            transform: scale(0.98);
+
+        button.secondary {
+            background: #444444;
+            color: #ffffff;
         }
-        .btn-secondary {
-            background-color: #57606f;
-        }
-        .btn-secondary:hover {
-            background-color: #747d8c;
-        }
-        #hud {
-            position: absolute;
-            top: 15px;
-            left: 20px;
-            font-size: 20px;
-            font-weight: bold;
-            color: #333;
-            z-index: 5;
+
+        button.secondary:hover {
+            background: #555555;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div id="hud" class="hidden">Score: <span id="score">0</span></div>
-    
-    <!-- Main Menu -->
-    <div id="main-menu" class="overlay">
-        <h1>STICKMAN JUMP</h1>
-        <p class="subtitle">Press Space or Tap to Jump</p>
-        <button id="start-btn">Start Game</button>
-    </div>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
 
-    <!-- Game Over Screen -->
-    <div id="game-over-menu" class="overlay hidden">
-        <h1>GAME OVER</h1>
-        <div class="score-display">Final Score: <span id="final-score">0</span></div>
-        <div>
-            <button id="retry-btn">Try Again</button>
-            <button id="menu-btn" class="btn-secondary">Main Menu</button>
+        <!-- Main Menu -->
+        <div id="menu-screen" class="ui-screen">
+            <h1>STICKMAN JUMP</h1>
+            <p>Press <b>SPACE</b> or <b>CLICK</b> to jump!</p>
+            <button id="start-btn">Start Game</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="ui-screen hidden">
+            <h2>GAME OVER</h2>
+            <p id="final-score">Score: 0</p>
+            <div class="btn-group">
+                <button id="retry-btn">Try Again</button>
+                <button id="menu-btn" class="secondary">Main Menu</button>
+            </div>
         </div>
     </div>
 
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
-</div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+        // UI Elements
+        const menuScreen = document.getElementById('menu-screen');
+        const gameoverScreen = document.getElementById('gameover-screen');
+        const finalScoreText = document.getElementById('final-score');
+        const startBtn = document.getElementById('start-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        const menuBtn = document.getElementById('menu-btn');
 
-// UI Elements
-const mainMenu = document.getElementById('main-menu');
-const gameOverMenu = document.getElementById('game-over-menu');
-const hud = document.getElementById('hud');
-const scoreEl = document.getElementById('score');
-const finalScoreEl = document.getElementById('final-score');
+        // Game Constants
+        const GROUND_Y = 320;
+        const GRAVITY = 0.6;
+        const JUMP_FORCE = -12;
+        const OBSTACLE_COLOR = '#ff3333'; // Vibrant red for all obstacles
 
-const startBtn = document.getElementById('start-btn');
-const retryBtn = document.getElementById('retry-btn');
-const menuBtn = document.getElementById('menu-btn');
+        // Obstacle Size Configurations (Small, Medium, Big)
+        const OBSTACLE_TYPES = [
+            { name: 'small', width: 20, height: 30 },
+            { name: 'medium', width: 30, height: 50 },
+            { name: 'big', width: 45, height: 70 }
+        ];
 
-// Game Constants
-const GROUND_Y = 320;
-const GRAVITY = 0.6;
-const JUMP_FORCE = -13;
-const INITIAL_SPEED = 6;
-const MAX_SPEED = 16;
-const SPEED_ACCELERATION = 0.0015;
+        // Game State Variables
+        let gameState = 'MENU'; // 'MENU', 'PLAYING', 'GAMEOVER'
+        let score = 0;
+        let gameSpeed = 5;
+        let obstacles = [];
+        let spawnTimer = 0;
+        let nextSpawnInterval = 100;
 
-// State Variables
-let gameState = 'MENU'; // 'MENU', 'PLAYING', 'GAMEOVER'
-let score = 0;
-let gameSpeed = INITIAL_SPEED;
-let animationFrameId;
-let runFrame = 0;
+        // Player (Stickman) State
+        const player = {
+            x: 80,
+            y: GROUND_Y,
+            vy: 0,
+            radius: 12, // Head radius
+            height: 50, // Body length
+            isGrounded: true,
 
-// Player Setup
-const player = {
-    x: 100,
-    y: GROUND_Y,
-    velocityY: 0,
-    isGrounded: true,
-    height: 60,
-    width: 20,
-    
-    reset() {
-        this.y = GROUND_Y;
-        this.velocityY = 0;
-        this.isGrounded = true;
-    },
-    
-    jump() {
-        if (this.isGrounded) {
-            this.velocityY = JUMP_FORCE;
-            this.isGrounded = false;
+            reset() {
+                this.y = GROUND_Y;
+                this.vy = 0;
+                this.isGrounded = true;
+            },
+
+            jump() {
+                if (this.isGrounded) {
+                    this.vy = JUMP_FORCE;
+                    this.isGrounded = false;
+                }
+            },
+
+            update() {
+                this.vy += GRAVITY;
+                this.y += this.vy;
+
+                if (this.y >= GROUND_Y) {
+                    this.y = GROUND_Y;
+                    this.vy = 0;
+                    this.isGrounded = true;
+                }
+            },
+
+            draw() {
+                const headY = this.y - this.height;
+
+                // White stickman styling
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+
+                // Head
+                ctx.beginPath();
+                ctx.arc(this.x, headY, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Body
+                ctx.beginPath();
+                ctx.moveTo(this.x, headY + this.radius);
+                ctx.lineTo(this.x, this.y - 15);
+                ctx.stroke();
+
+                // Legs
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y - 15);
+                ctx.lineTo(this.x - 10, this.y); // Left leg
+                ctx.moveTo(this.x, this.y - 15);
+                ctx.lineTo(this.x + 10, this.y); // Right leg
+                ctx.stroke();
+
+                // Arms
+                ctx.beginPath();
+                const armY = headY + this.radius + 10;
+                if (!this.isGrounded) {
+                    ctx.moveTo(this.x - 12, armY - 8);
+                    ctx.lineTo(this.x, armY);
+                    ctx.lineTo(this.x + 12, armY - 8);
+                } else {
+                    ctx.moveTo(this.x - 10, armY + 5);
+                    ctx.lineTo(this.x, armY);
+                    ctx.lineTo(this.x + 10, armY + 5);
+                }
+                ctx.stroke();
+            }
+        };
+
+        // Input Listeners
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                if (gameState === 'PLAYING') player.jump();
+            }
+        });
+
+        canvas.addEventListener('mousedown', () => {
+            if (gameState === 'PLAYING') player.jump();
+        });
+
+        // UI Event Listeners
+        startBtn.addEventListener('click', startGame);
+        retryBtn.addEventListener('click', startGame);
+        menuBtn.addEventListener('click', showMainMenu);
+
+        // Core Game Functions
+        function showMainMenu() {
+            gameState = 'MENU';
+            menuScreen.classList.remove('hidden');
+            gameoverScreen.classList.add('hidden');
+            resetGameValues();
+            renderBackgroundOnly();
         }
-    },
-    
-    update() {
-        this.velocityY += GRAVITY;
-        this.y += this.velocityY;
 
-        if (this.y >= GROUND_Y) {
-            this.y = GROUND_Y;
-            this.velocityY = 0;
-            this.isGrounded = true;
+        function startGame() {
+            gameState = 'PLAYING';
+            resetGameValues();
+            menuScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
         }
-    },
-    
-    draw() {
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
 
-        const headRadius = 10;
-        const headY = this.y - this.height + headRadius;
-        const torsoTopY = headY + headRadius;
-        const torsoBottomY = this.y - 25;
+        function triggerGameOver() {
+            gameState = 'GAMEOVER';
+            finalScoreText.textContent = `Score: ${Math.floor(score)}`;
+            gameoverScreen.classList.remove('hidden');
+        }
 
-        // Head
-        ctx.beginPath();
-        ctx.arc(this.x, headY, headRadius, 0, Math.PI * 2);
-        ctx.stroke();
+        function resetGameValues() {
+            score = 0;
+            gameSpeed = 5;
+            obstacles = [];
+            spawnTimer = 0;
+            nextSpawnInterval = 80;
+            player.reset();
+        }
 
-        // Torso
-        ctx.beginPath();
-        ctx.moveTo(this.x, torsoTopY);
-        ctx.lineTo(this.x, torsoBottomY);
-        ctx.stroke();
+        function spawnObstacle() {
+            const type = OBSTACLE_TYPES[Math.floor(Math.random() * OBSTACLE_TYPES.length)];
+            obstacles.push({
+                x: canvas.width,
+                y: GROUND_Y - type.height,
+                width: type.width,
+                height: type.height
+            });
+        }
 
-        // Animated Legs & Arms
-        if (!this.isGrounded) {
-            // Jump pose
+        function checkCollision(player, obs) {
+            const playerLeft = player.x - 10;
+            const playerRight = player.x + 10;
+            const playerTop = player.y - player.height - player.radius;
+            const playerBottom = player.y;
+
+            return (
+                playerRight > obs.x &&
+                playerLeft < obs.x + obs.width &&
+                playerBottom > obs.y &&
+                playerTop < obs.y + obs.height
+            );
+        }
+
+        // Main Game Loop
+        function gameLoop() {
+            // Fill background with black
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Ground (White)
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(this.x, torsoBottomY);
-            ctx.lineTo(this.x - 12, this.y - 10);
-            ctx.moveTo(this.x, torsoBottomY);
-            ctx.lineTo(this.x + 12, this.y - 15);
-            // Arms UP
-            ctx.moveTo(this.x, torsoTopY + 5);
-            ctx.lineTo(this.x - 10, torsoTopY - 10);
-            ctx.moveTo(this.x, torsoTopY + 5);
-            ctx.lineTo(this.x + 10, torsoTopY - 10);
+            ctx.moveTo(0, GROUND_Y);
+            ctx.lineTo(canvas.width, GROUND_Y);
             ctx.stroke();
-        } else {
-            // Running leg positions based on runFrame
-            const legAngle = Math.sin(runFrame * 0.2) * 15;
+
+            if (gameState === 'PLAYING') {
+                // Ramp up game speed over time
+                gameSpeed += 0.0015;
+                score += gameSpeed * 0.05;
+
+                // Handle player update & render
+                player.update();
+                player.draw();
+
+                // Handle Obstacles
+                spawnTimer++;
+                if (spawnTimer >= nextSpawnInterval) {
+                    spawnObstacle();
+                    spawnTimer = 0;
+                    nextSpawnInterval = Math.floor(Math.random() * 50 + 600 / gameSpeed);
+                }
+
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obs = obstacles[i];
+                    obs.x -= gameSpeed;
+
+                    // Draw Red Obstacle
+                    ctx.fillStyle = OBSTACLE_COLOR;
+                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+                    // Check Collision
+                    if (checkCollision(player, obs)) {
+                        triggerGameOver();
+                    }
+
+                    // Remove off-screen obstacles
+                    if (obs.x + obs.width < 0) {
+                        obstacles.splice(i, 1);
+                    }
+                }
+
+                // Render Score UI
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 20px sans-serif';
+                ctx.fillText(`Score: ${Math.floor(score)}`, 20, 35);
+                ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}x`, 680, 35);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function renderBackgroundOnly() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            // Left leg
-            ctx.moveTo(this.x, torsoBottomY);
-            ctx.lineTo(this.x - legAngle, this.y);
-            // Right leg
-            ctx.moveTo(this.x, torsoBottomY);
-            ctx.lineTo(this.x + legAngle, this.y);
-            
-            // Arms swinging
-            ctx.moveTo(this.x, torsoTopY + 5);
-            ctx.lineTo(this.x + legAngle * 0.8, torsoTopY + 20);
-            ctx.moveTo(this.x, torsoTopY + 5);
-            ctx.lineTo(this.x - legAngle * 0.8, torsoTopY + 20);
+            ctx.moveTo(0, GROUND_Y);
+            ctx.lineTo(canvas.width, GROUND_Y);
             ctx.stroke();
-        }
-    }
-};
-
-// Obstacles Setup
-let obstacles = [];
-const OBSTACLE_TYPES = [
-    { name: 'small', width: 20, height: 30, color: '#e74c3c' },
-    { name: 'medium', width: 35, height: 50, color: '#e67e22' },
-    { name: 'big', width: 50, height: 70, color: '#8e44ad' }
-];
-
-let obstacleTimer = 0;
-let minObstacleInterval = 70;
-
-function spawnObstacle() {
-    // Pick a random obstacle size profile
-    const type = OBSTACLE_TYPES[Math.floor(Math.random() * OBSTACLE_TYPES.length)];
-    obstacles.push({
-        x: canvas.width + 50,
-        y: GROUND_Y - type.height,
-        width: type.width,
-        height: type.height,
-        color: type.color
-    });
-}
-
-function updateObstacles() {
-    obstacleTimer++;
-    // Adjust spawn frequency dynamically according to speed
-    const currentInterval = Math.max(40, minObstacleInterval - Math.floor(gameSpeed));
-    
-    if (obstacleTimer > currentInterval + Math.random() * 40) {
-        spawnObstacle();
-        obstacleTimer = 0;
-    }
-
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-        const obs = obstacles[i];
-        obs.x -= gameSpeed;
-
-        // Collision Check (AABB)
-        const playerLeft = player.x - 10;
-        const playerRight = player.x + 10;
-        const playerTop = player.y - player.height;
-        const playerBottom = player.y;
-
-        if (
-            playerRight > obs.x &&
-            playerLeft < obs.x + obs.width &&
-            playerBottom > obs.y &&
-            playerTop < obs.y + obs.height
-        ) {
-            triggerGameOver();
+            player.draw();
         }
 
-        // Cleanup offscreen obstacles
-        if (obs.x + obs.width < 0) {
-            obstacles.splice(i, 1);
-        }
-    }
-}
-
-function drawObstacles() {
-    obstacles.forEach(obs => {
-        ctx.fillStyle = obs.color;
-        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-        // Dark inner border for style
-        ctx.strokeStyle = '#2c3e50';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
-    });
-}
-
-function drawEnvironment() {
-    // Draw Ground
-    ctx.fillStyle = '#2ed573';
-    ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
-    
-    ctx.strokeStyle = '#26af5f';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(0, GROUND_Y);
-    ctx.lineTo(canvas.width, GROUND_Y);
-    ctx.stroke();
-}
-
-// Game Loop
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    drawEnvironment();
-
-    if (gameState === 'PLAYING') {
-        runFrame++;
-        score += 0.1;
-        scoreEl.innerText = Math.floor(score);
-
-        // Gradually increase speed over time
-        if (gameSpeed < MAX_SPEED) {
-            gameSpeed += SPEED_ACCELERATION;
-        }
-
-        player.update();
-        updateObstacles();
-        
-        player.draw();
-        drawObstacles();
-
-        animationFrameId = requestAnimationFrame(gameLoop);
-    }
-}
-
-// Flow Control Functions
-function startGame() {
-    gameState = 'PLAYING';
-    score = 0;
-    gameSpeed = INITIAL_SPEED;
-    obstacles = [];
-    obstacleTimer = 0;
-    player.reset();
-
-    mainMenu.classList.add('hidden');
-    gameOverMenu.classList.add('hidden');
-    hud.classList.remove('hidden');
-
-    cancelAnimationFrame(animationFrameId);
-    gameLoop();
-}
-
-function triggerGameOver() {
-    gameState = 'GAMEOVER';
-    finalScoreEl.innerText = Math.floor(score);
-    gameOverMenu.classList.remove('hidden');
-    hud.classList.add('hidden');
-}
-
-function showMainMenu() {
-    gameState = 'MENU';
-    cancelAnimationFrame(animationFrameId);
-    
-    // Reset background scene render once
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawEnvironment();
-    player.reset();
-    player.draw();
-
-    gameOverMenu.classList.add('hidden');
-    hud.classList.add('hidden');
-    mainMenu.classList.remove('hidden');
-}
-
-// Event Listeners
-window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' || e.code === 'ArrowUp') {
-        if (gameState === 'PLAYING') {
-            player.jump();
-        } else if (gameState === 'MENU') {
-            startGame();
-        }
-    }
-});
-
-canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (gameState === 'PLAYING') {
-        player.jump();
-    }
-});
-
-startBtn.addEventListener('click', startGame);
-retryBtn.addEventListener('click', startGame);
-menuBtn.addEventListener('click', showMainMenu);
-
-// Initial Render on Page Load
-showMainMenu();
-</script>
+        // Initialize display
+        showMainMenu();
+        requestAnimationFrame(gameLoop);
+    </script>
 </body>
 </html>
