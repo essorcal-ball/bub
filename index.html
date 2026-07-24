@@ -70,20 +70,21 @@
 
         h2 {
             font-size: 2.5rem;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             color: #ff2222;
             text-shadow: 0 0 10px rgba(255, 34, 34, 0.5);
         }
 
         p {
             font-size: 1.2rem;
-            margin-bottom: 25px;
+            margin-bottom: 8px;
             color: #aaaaaa;
         }
 
         .btn-group {
             display: flex;
             gap: 15px;
+            margin-top: 15px;
         }
 
         button {
@@ -124,13 +125,17 @@
         <div id="menu-screen" class="ui-screen">
             <h1>STICKMAN JUMP</h1>
             <p>Press <b>SPACE</b> or <b>CLICK</b> to jump!</p>
-            <button id="start-btn">Start Game</button>
+            <p id="menu-highscore" style="color: #00e676;">High Score: 0</p>
+            <p id="menu-coins" style="color: #ffd700;">Total Coins: 0</p>
+            <button id="start-btn" style="margin-top: 15px;">Start Game</button>
         </div>
 
         <!-- Game Over Screen -->
         <div id="gameover-screen" class="ui-screen hidden">
             <h2>GAME OVER</h2>
             <p id="final-score">Score: 0</p>
+            <p id="high-score" style="color: #00e676;">High Score: 0</p>
+            <p id="final-coins" style="color: #ffd700;">Total Coins: 0</p>
             <div class="btn-group">
                 <button id="retry-btn">Try Again</button>
                 <button id="menu-btn" class="secondary">Main Menu</button>
@@ -145,7 +150,11 @@
         // UI Elements
         const menuScreen = document.getElementById('menu-screen');
         const gameoverScreen = document.getElementById('gameover-screen');
+        const menuHighscoreText = document.getElementById('menu-highscore');
+        const menuCoinsText = document.getElementById('menu-coins');
         const finalScoreText = document.getElementById('final-score');
+        const highScoreText = document.getElementById('high-score');
+        const finalCoinsText = document.getElementById('final-coins');
         const startBtn = document.getElementById('start-btn');
         const retryBtn = document.getElementById('retry-btn');
         const menuBtn = document.getElementById('menu-btn');
@@ -157,31 +166,38 @@
         
         // Colors
         const RED_OBSTACLE = '#ff2222';
+        const GOLD_COIN = '#ffd700';
         const GRAY_GROUND = '#555555';
         const WHITE_STICKMAN = '#ffffff';
 
-        // Obstacle Size Configurations (Small, Medium, Big)
-        const OBSTACLE_TYPES = [
-            { name: 'small', width: 20, height: 30 },
-            { name: 'medium', width: 30, height: 50 },
-            { name: 'big', width: 45, height: 70 }
-        ];
+        // Saved Data (Loaded from LocalStorage)
+        let totalCoins = parseInt(localStorage.getItem('stickman_coins')) || 0;
+        let highScore = parseInt(localStorage.getItem('stickman_highscore')) || 0;
 
         // Game State Variables
         let gameState = 'MENU'; // 'MENU', 'PLAYING', 'GAMEOVER'
         let score = 0;
         let gameSpeed = 5;
         let obstacles = [];
+        let coins = [];
         let spawnTimer = 0;
+        let coinSpawnTimer = 0;
         let nextSpawnInterval = 100;
+        let nextCoinInterval = 120;
+
+        // Save progress function
+        function saveGameData() {
+            localStorage.setItem('stickman_coins', totalCoins);
+            localStorage.setItem('stickman_highscore', highScore);
+        }
 
         // Player (Stickman) State
         const player = {
             x: 80,
             y: GROUND_Y,
             vy: 0,
-            radius: 12, // Head radius
-            height: 50, // Body length
+            radius: 12,
+            height: 50,
             isGrounded: true,
 
             reset() {
@@ -211,7 +227,6 @@
             draw() {
                 const headY = this.y - this.height;
 
-                // White stickman styling
                 ctx.strokeStyle = WHITE_STICKMAN;
                 ctx.lineWidth = 3;
                 ctx.lineCap = 'round';
@@ -230,9 +245,9 @@
                 // Legs
                 ctx.beginPath();
                 ctx.moveTo(this.x, this.y - 15);
-                ctx.lineTo(this.x - 10, this.y); // Left leg
+                ctx.lineTo(this.x - 10, this.y);
                 ctx.moveTo(this.x, this.y - 15);
-                ctx.lineTo(this.x + 10, this.y); // Right leg
+                ctx.lineTo(this.x + 10, this.y);
                 ctx.stroke();
 
                 // Arms
@@ -271,6 +286,8 @@
         // Core Game Functions
         function showMainMenu() {
             gameState = 'MENU';
+            menuHighscoreText.textContent = `High Score: ${highScore}`;
+            menuCoinsText.textContent = `Total Coins: ${totalCoins}`;
             menuScreen.classList.remove('hidden');
             gameoverScreen.classList.add('hidden');
             resetGameValues();
@@ -286,7 +303,19 @@
 
         function triggerGameOver() {
             gameState = 'GAMEOVER';
-            finalScoreText.textContent = `Score: ${Math.floor(score)}`;
+            const currentScore = Math.floor(score);
+
+            // Check and update high score
+            if (currentScore > highScore) {
+                highScore = currentScore;
+            }
+
+            // Save persistent data
+            saveGameData();
+
+            finalScoreText.textContent = `Score: ${currentScore}`;
+            highScoreText.textContent = `High Score: ${highScore}`;
+            finalCoinsText.textContent = `Total Coins: ${totalCoins}`;
             gameoverScreen.classList.remove('hidden');
         }
 
@@ -294,18 +323,45 @@
             score = 0;
             gameSpeed = 5;
             obstacles = [];
+            coins = [];
             spawnTimer = 0;
+            coinSpawnTimer = 0;
             nextSpawnInterval = 80;
+            nextCoinInterval = 100;
             player.reset();
         }
 
         function spawnObstacle() {
-            const type = OBSTACLE_TYPES[Math.floor(Math.random() * OBSTACLE_TYPES.length)];
-            obstacles.push({
+            const allowFlying = score >= 200;
+            const isFlying = allowFlying && Math.random() < 0.35;
+
+            if (isFlying) {
+                const width = Math.floor(Math.random() * 30 + 35);
+                const height = 25;
+                const y = GROUND_Y - 95;
+
+                obstacles.push({ x: canvas.width, y, width, height });
+            } else {
+                const width = Math.floor(Math.random() * 55 + 20);
+                const height = Math.floor(Math.random() * 45 + 25);
+
+                obstacles.push({
+                    x: canvas.width,
+                    y: GROUND_Y - height,
+                    width,
+                    height
+                });
+            }
+        }
+
+        function spawnCoin() {
+            const isAirCoin = Math.random() < 0.6; 
+            const y = isAirCoin ? GROUND_Y - Math.floor(Math.random() * 60 + 60) : GROUND_Y - 20;
+
+            coins.push({
                 x: canvas.width,
-                y: GROUND_Y - type.height,
-                width: type.width,
-                height: type.height
+                y: y,
+                radius: 10
             });
         }
 
@@ -323,16 +379,32 @@
             );
         }
 
+        function checkCoinCollection(player, coin) {
+            const playerLeft = player.x - 10;
+            const playerRight = player.x + 10;
+            const playerTop = player.y - player.height - player.radius;
+            const playerBottom = player.y;
+
+            const coinLeft = coin.x - coin.radius;
+            const coinRight = coin.x + coin.radius;
+            const coinTop = coin.y - coin.radius;
+            const coinBottom = coin.y + coin.radius;
+
+            return (
+                playerRight > coinLeft &&
+                playerLeft < coinRight &&
+                playerBottom > coinTop &&
+                playerTop < coinBottom
+            );
+        }
+
         function drawEnvironment() {
-            // Fill background with black
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Gray Ground Block
             ctx.fillStyle = GRAY_GROUND;
             ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
 
-            // Draw Gray Ground Top Edge Line for sharpness
             ctx.strokeStyle = '#777777';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -346,15 +418,13 @@
             drawEnvironment();
 
             if (gameState === 'PLAYING') {
-                // Ramp up game speed over time
                 gameSpeed += 0.0015;
                 score += gameSpeed * 0.05;
 
-                // Handle player update & render
                 player.update();
                 player.draw();
 
-                // Handle Obstacles
+                // --- Handle Obstacles ---
                 spawnTimer++;
                 if (spawnTimer >= nextSpawnInterval) {
                     spawnObstacle();
@@ -366,25 +436,62 @@
                     const obs = obstacles[i];
                     obs.x -= gameSpeed;
 
-                    // Draw Red Obstacle
                     ctx.fillStyle = RED_OBSTACLE;
                     ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
 
-                    // Check Collision
                     if (checkCollision(player, obs)) {
                         triggerGameOver();
                     }
 
-                    // Remove off-screen obstacles
                     if (obs.x + obs.width < 0) {
                         obstacles.splice(i, 1);
                     }
                 }
 
-                // Render Score UI
+                // --- Handle Coins ---
+                coinSpawnTimer++;
+                if (coinSpawnTimer >= nextCoinInterval) {
+                    spawnCoin();
+                    coinSpawnTimer = 0;
+                    nextCoinInterval = Math.floor(Math.random() * 80 + 100);
+                }
+
+                for (let i = coins.length - 1; i >= 0; i--) {
+                    const coin = coins[i];
+                    coin.x -= gameSpeed;
+
+                    ctx.fillStyle = GOLD_COIN;
+                    ctx.beginPath();
+                    ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    if (checkCoinCollection(player, coin)) {
+                        totalCoins += 1; // Increase total coin wallet
+                        saveGameData(); // Save instantly
+                        coins.splice(i, 1);
+                        continue;
+                    }
+
+                    if (coin.x + coin.radius < 0) {
+                        coins.splice(i, 1);
+                    }
+                }
+
+                // Render HUD
                 ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 20px sans-serif';
+                ctx.font = 'bold 18px sans-serif';
                 ctx.fillText(`Score: ${Math.floor(score)}`, 20, 35);
+                
+                ctx.fillStyle = '#00e676';
+                ctx.fillText(`High: ${highScore}`, 150, 35);
+
+                ctx.fillStyle = '#ffd700';
+                ctx.fillText(`Coins: ${totalCoins}`, 270, 35);
+
+                ctx.fillStyle = '#ffffff';
                 ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}x`, 680, 35);
             }
 
