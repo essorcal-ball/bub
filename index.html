@@ -13,7 +13,7 @@
         }
 
         body {
-            background-color: #050505;
+            background-color: #000000 !important;
             color: #ffffff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
@@ -27,17 +27,18 @@
             position: relative;
             width: 800px;
             height: 400px;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.15);
             border-radius: 8px;
             overflow: hidden;
-            background: #000000;
-            border: 1px solid #333;
+            background-color: #000000 !important;
+            border: 2px solid #333333;
         }
 
         canvas {
             display: block;
             width: 100%;
             height: 100%;
+            background-color: #000000 !important;
         }
 
         /* Overlay UI Screens */
@@ -70,8 +71,8 @@
         h2 {
             font-size: 2.5rem;
             margin-bottom: 15px;
-            color: #ff3333;
-            text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+            color: #ff2222;
+            text-shadow: 0 0 10px rgba(255, 34, 34, 0.5);
         }
 
         p {
@@ -89,7 +90,7 @@
             padding: 12px 28px;
             font-size: 1.1rem;
             font-weight: bold;
-            color: #000;
+            color: #000000;
             background: #ffffff;
             border: none;
             border-radius: 6px;
@@ -153,7 +154,11 @@
         const GROUND_Y = 320;
         const GRAVITY = 0.6;
         const JUMP_FORCE = -12;
-        const OBSTACLE_COLOR = '#ff3333'; // Vibrant red for all obstacles
+        
+        // Colors
+        const RED_OBSTACLE = '#ff2222';
+        const GRAY_GROUND = '#555555';
+        const WHITE_STICKMAN = '#ffffff';
 
         // Obstacle Size Configurations (Small, Medium, Big)
         const OBSTACLE_TYPES = [
@@ -207,7 +212,7 @@
                 const headY = this.y - this.height;
 
                 // White stickman styling
-                ctx.strokeStyle = '#ffffff';
+                ctx.strokeStyle = WHITE_STICKMAN;
                 ctx.lineWidth = 3;
                 ctx.lineCap = 'round';
 
@@ -318,19 +323,27 @@
             );
         }
 
-        // Main Game Loop
-        function gameLoop() {
+        function drawEnvironment() {
             // Fill background with black
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Ground (White)
-            ctx.strokeStyle = '#ffffff';
+            // Draw Gray Ground Block
+            ctx.fillStyle = GRAY_GROUND;
+            ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+
+            // Draw Gray Ground Top Edge Line for sharpness
+            ctx.strokeStyle = '#777777';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, GROUND_Y);
             ctx.lineTo(canvas.width, GROUND_Y);
             ctx.stroke();
+        }
+
+        // Main Game Loop
+        function gameLoop() {
+            drawEnvironment();
 
             if (gameState === 'PLAYING') {
                 // Ramp up game speed over time
@@ -354,7 +367,7 @@
                     obs.x -= gameSpeed;
 
                     // Draw Red Obstacle
-                    ctx.fillStyle = OBSTACLE_COLOR;
+                    ctx.fillStyle = RED_OBSTACLE;
                     ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
 
                     // Check Collision
@@ -379,15 +392,7 @@
         }
 
         function renderBackgroundOnly() {
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(0, GROUND_Y);
-            ctx.lineTo(canvas.width, GROUND_Y);
-            ctx.stroke();
+            drawEnvironment();
             player.draw();
         }
 
