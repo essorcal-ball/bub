@@ -147,6 +147,47 @@
             box-shadow: 0 0 10px rgba(255, 34, 34, 0.5);
         }
 
+        /* Curse Prompt Screen Styles */
+        .curse-panel {
+            background: #111118;
+            border: 2px solid #b000ff;
+            border-radius: 8px;
+            padding: 20px;
+            width: 85%;
+            max-width: 550px;
+            box-shadow: 0 0 25px rgba(176, 0, 255, 0.4);
+            text-align: center;
+        }
+
+        .curse-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .curse-card {
+            background: #08080e;
+            border: 1px solid #333355;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .curse-card:hover {
+            border-color: #b000ff;
+            background: #121220;
+        }
+
+        .curse-card.easy { border-color: #00ff66; }
+        .curse-card.medium { border-color: #ffaa00; }
+        .curse-card.hard { border-color: #ff2222; }
+
         /* Shop Scrollable Layout */
         .shop-wrapper {
             width: 100%;
@@ -291,6 +332,38 @@
             <div class="btn-group">
                 <button id="play-btn">Play</button>
                 <button id="shop-btn" class="gold">Shop</button>
+            </div>
+        </div>
+
+        <!-- Curse Selection Screen -->
+        <div id="curse-screen" class="ui-screen hidden">
+            <div class="curse-panel">
+                <h3 style="color: #b000ff;">🔮 THE ALTAR OF CURSES</h3>
+                <p style="font-size: 0.95rem; margin-bottom: 10px;">Reached an 800-point milestone! Choose a curse to proceed:</p>
+                <div class="curse-options">
+                    <div class="curse-card easy" onclick="selectCurse('easy')">
+                        <div>
+                            <h4 style="color: #00ff66;">🟢 Easy Mist Curse</h4>
+                            <p style="font-size: 0.8rem; margin:0;">Green Mist: -20% Coin spawn rate for 500 pts.</p>
+                        </div>
+                        <span style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+0 Coins</span>
+                    </div>
+                    <div class="curse-card medium" onclick="selectCurse('medium')">
+                        <div>
+                            <h4 style="color: #ffaa00;">🔥 Flame Heat Curse</h4>
+                            <p style="font-size: 0.8rem; margin:0;">Flames: Larger obstacles & slower cooldowns for 500 pts.</p>
+                        </div>
+                        <span style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+2 Coins</span>
+                    </div>
+                    <div class="curse-card hard" onclick="selectCurse('hard')">
+                        <div>
+                            <h4 style="color: #ff2222;">⚡ Lightning Void Curse</h4>
+                            <p style="font-size: 0.8rem; margin:0;">Red Lightning: Disables all active abilities for 500 pts.</p>
+                        </div>
+                        <span style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+5 Coins</span>
+                    </div>
+                </div>
+                <button id="skip-curse-btn" class="secondary" style="width: 100%; font-size: 0.9rem;" onclick="skipCurse()">Skip Curse (Pay 1 Coin)</button>
             </div>
         </div>
 
@@ -509,6 +582,7 @@
         const hubScreen = document.getElementById('hub-screen');
         const shopScreen = document.getElementById('shop-screen');
         const gameoverScreen = document.getElementById('gameover-screen');
+        const curseScreen = document.getElementById('curse-screen');
         const adminPassScreen = document.getElementById('admin-pass-screen');
         const adminPanelScreen = document.getElementById('admin-panel-screen');
         
@@ -523,6 +597,7 @@
         const finalCoinsText = document.getElementById('final-coins');
         const adminCurrentCoinsText = document.getElementById('admin-current-coins');
         const adminCurrentScoreText = document.getElementById('admin-current-score');
+        const skipCurseBtn = document.getElementById('skip-curse-btn');
         
         // Shop Abilities UI
         const hackerLevelText = document.getElementById('hacker-level-text');
@@ -622,6 +697,11 @@
         let nextCoinInterval = 300;
         let spawnPausedTimer = 0;
 
+        // Curses System State
+        let activeCurse = null;       // 'easy', 'medium', 'hard', or null
+        let curseTimer = 0;           // Duration counter for active curse
+        let nextCurseThreshold = 800; // Next score target to trigger altar
+
         // Ability States
         let abilityCooldownE = 0;
         let abilityCooldownQ = 0;
@@ -705,12 +785,11 @@
                 if (equippedSkin === 'green') skinColor = '#00ff66';
                 else if (equippedSkin === 'pirate') skinColor = '#ffaa00';
                 else if (equippedSkin === 'robot') skinColor = '#00ccff';
-                else if (equippedSkin === 'alien') skinColor = '#00ff66'; 
+                else if (equippedSkin === 'alien') skinColor = '#00ff66';
                 else if (equippedSkin === 'gold') skinColor = '#ffd700';
 
                 let strokeWidth = 3;
 
-                // Hacker Level 3 override
                 if (hackerLvl3Timer > 0) {
                     skinColor = '#b000ff';
                     strokeWidth = Math.random() < 0.3 ? 5 : 3;
@@ -722,7 +801,6 @@
 
                 let offsetX = (hackerLvl3Timer > 0 && Math.random() < 0.4) ? (Math.random() * 6 - 3) : 0;
 
-                // --- ALIEN / GOLD AURA EFFECT ---
                 if (equippedSkin === 'alien') {
                     ctx.shadowColor = '#00ff66';
                     ctx.shadowBlur = 12;
@@ -733,7 +811,6 @@
                     ctx.shadowBlur = 0;
                 }
 
-                // --- DRAW HEAD ---
                 if (equippedSkin === 'robot') {
                     ctx.fillStyle = '#081020';
                     ctx.fillRect(this.x - 12 + offsetX, headY - 12, 24, 24);
@@ -792,7 +869,6 @@
 
                 ctx.shadowBlur = 0; 
 
-                // --- DRAW BODY & LIMBS ---
                 if (medicReviveTimer > 0) {
                     ctx.beginPath();
                     ctx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
@@ -879,8 +955,7 @@
                     ctx.stroke();
                 }
 
-                // HORSESHOE MAGNET
-                if (equippedAbility === 'magnet' && magnetLevel > 0 && isMagnetActive) {
+                if (equippedAbility === 'magnet' && magnetLevel > 0 && isMagnetActive && activeCurse !== 'hard') {
                     const magX = this.x + 18 + offsetX;
                     const magY = headY + 12;
 
@@ -913,13 +988,15 @@
 
         // Ability Logic triggers
         function triggerAbilityE() {
-            if (gameState !== 'PLAYING') return;
+            if (gameState !== 'PLAYING' || activeCurse === 'hard') return;
+
+            let cdMult = (activeCurse === 'medium') ? 1.5 : 1.0;
 
             if (equippedAbility === 'hacker' && hackerLevel > 0 && abilityCooldownE <= 0) {
                 if (hackerLevel === 1) {
                     let nearest = getUpcomingObstacles(1);
                     nearest.forEach(obs => obs.hacked = true);
-                    abilityCooldownE = 6.5 * 60;
+                    abilityCooldownE = Math.floor(6.5 * 60 * cdMult);
                 } else if (hackerLevel === 2) {
                     hackerCharges = 3;
                     let nearest = getUpcomingObstacles(3);
@@ -929,10 +1006,10 @@
                             hackerCharges--;
                         }
                     });
-                    abilityCooldownE = 15.0 * 60;
+                    abilityCooldownE = Math.floor(15.0 * 60 * cdMult);
                 } else if (hackerLevel === 3) {
                     hackerLvl3Timer = 9.0 * 60;
-                    abilityCooldownE = 23.0 * 60;
+                    abilityCooldownE = Math.floor(23.0 * 60 * cdMult);
                 }
             }
 
@@ -940,7 +1017,7 @@
                 if (slimeLevel === 1) {
                     throwSlimePuddle();
                     gameSpeed = Math.max(3.5, gameSpeed * 0.6);
-                    abilityCooldownE = 20.0 * 60;
+                    abilityCooldownE = Math.floor(20.0 * 60 * cdMult);
                 } else if (slimeLevel === 2) {
                     slimeBlob = {
                         x: player.x + 20,
@@ -948,18 +1025,19 @@
                         targetObstaclesRemaining: 5,
                         state: 'RUNNING'
                     };
-                    abilityCooldownE = 20.0 * 60;
+                    abilityCooldownE = Math.floor(20.0 * 60 * cdMult);
                 }
             }
         }
 
         function triggerAbilityQ() {
-            if (gameState !== 'PLAYING') return;
+            if (gameState !== 'PLAYING' || activeCurse === 'hard') return;
+            let cdMult = (activeCurse === 'medium') ? 1.5 : 1.0;
 
             if (equippedAbility === 'slime' && slimeLevel === 2 && abilityCooldownQ <= 0) {
                 throwSlimePuddle();
                 gameSpeed = Math.max(3.5, gameSpeed * 0.6);
-                abilityCooldownQ = 18.0 * 60;
+                abilityCooldownQ = Math.floor(18.0 * 60 * cdMult);
             }
         }
 
@@ -976,6 +1054,39 @@
                 .filter(obs => obs.x + obs.width > player.x && !obs.hacked)
                 .sort((a, b) => a.x - b.x)
                 .slice(0, count);
+        }
+
+        // Curses System Triggers
+        function triggerCursePrompt() {
+            gameState = 'CURSE_PROMPT';
+            obstacles = []; // Clear obstacles
+            curseScreen.classList.remove('hidden');
+            skipCurseBtn.disabled = totalCoins < 1;
+            skipCurseBtn.textContent = totalCoins >= 1 ? 'Skip Curse (Pay 1 Coin)' : 'Skip Curse (Need 1 Coin)';
+        }
+
+        function selectCurse(type) {
+            activeCurse = type;
+            curseTimer = 500; // Lasts for 500 score points
+            curseScreen.classList.add('hidden');
+            gameState = 'PLAYING';
+            spawnPausedTimer = 60;
+
+            if (type === 'medium') totalCoins += 2;
+            if (type === 'hard') totalCoins += 5;
+            saveGameData();
+        }
+
+        function skipCurse() {
+            if (totalCoins >= 1) {
+                totalCoins -= 1;
+                saveGameData();
+                activeCurse = null;
+                curseTimer = 0;
+                curseScreen.classList.add('hidden');
+                gameState = 'PLAYING';
+                spawnPausedTimer = 40;
+            }
         }
 
         // Input Listeners
@@ -1083,7 +1194,6 @@
 
         adminExitBtn.addEventListener('click', showHubMenu);
 
-        // Admin Functions
         function openAdminPassPrompt() {
             adminPassInput.value = '';
             adminPassError.style.display = 'none';
@@ -1110,12 +1220,10 @@
             adminCurrentScoreText.textContent = `Current High Score: ${highScore}`;
         }
 
-        // Shop Interface Management
         function updateShopUI() {
             shopCoinsText.textContent = `Coins Available: ${totalCoins}`;
             shopHighscoreText.textContent = `High Score: ${highScore}`;
 
-            // --- HACKER ---
             hackerLevelText.textContent = `Level: ${hackerLevel} / 3`;
             if (hackerLevel === 0) {
                 hackerCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
@@ -1142,7 +1250,6 @@
             equipHackerBtn.textContent = equippedAbility === 'hacker' ? 'EQUIPPED' : 'Equip';
             equipHackerBtn.className = equippedAbility === 'hacker' ? 'equipped' : 'secondary';
 
-            // --- MAGNET ---
             magnetLevelText.textContent = `Level: ${magnetLevel} / 2`;
             if (magnetLevel === 0) {
                 magnetCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
@@ -1164,7 +1271,6 @@
             equipMagnetBtn.textContent = equippedAbility === 'magnet' ? 'EQUIPPED' : 'Equip';
             equipMagnetBtn.className = equippedAbility === 'magnet' ? 'equipped' : 'secondary';
 
-            // --- SLIME ---
             slimeLevelText.textContent = `Level: ${slimeLevel} / 2`;
             if (slimeLevel === 0) {
                 slimeCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
@@ -1186,7 +1292,6 @@
             equipSlimeBtn.textContent = equippedAbility === 'slime' ? 'EQUIPPED' : 'Equip';
             equipSlimeBtn.className = equippedAbility === 'slime' ? 'equipped' : 'secondary';
 
-            // --- MEDIC ---
             medicLevelText.textContent = `Level: ${medicLevel} / 2`;
             if (medicLevel === 0) {
                 medicCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
@@ -1208,7 +1313,6 @@
             equipMedicBtn.textContent = equippedAbility === 'medic' ? 'EQUIPPED' : 'Equip';
             equipMedicBtn.className = equippedAbility === 'medic' ? 'equipped' : 'secondary';
 
-            // --- SKINS UI ---
             const skinRequirements = {
                 'green': 1000,
                 'pirate': 2000,
@@ -1279,7 +1383,6 @@
             updateShopUI();
         }
 
-        // Navigation Functions
         function showHubMenu() {
             gameState = 'HUB';
             hubHighscoreText.textContent = `High Score: ${highScore}`;
@@ -1298,6 +1401,7 @@
             hubScreen.classList.remove('hidden');
             shopScreen.classList.add('hidden');
             gameoverScreen.classList.add('hidden');
+            curseScreen.classList.add('hidden');
             adminPassScreen.classList.add('hidden');
             adminPanelScreen.classList.add('hidden');
             resetGameValues();
@@ -1310,6 +1414,7 @@
             shopScreen.classList.remove('hidden');
             hubScreen.classList.add('hidden');
             gameoverScreen.classList.add('hidden');
+            curseScreen.classList.add('hidden');
             adminPassScreen.classList.add('hidden');
             adminPanelScreen.classList.add('hidden');
         }
@@ -1320,19 +1425,18 @@
             hubScreen.classList.add('hidden');
             shopScreen.classList.add('hidden');
             gameoverScreen.classList.add('hidden');
+            curseScreen.classList.add('hidden');
             adminPassScreen.classList.add('hidden');
             adminPanelScreen.classList.add('hidden');
         }
 
         function triggerGameOver() {
-            // CHECK MEDIC REVIVE PERKS
             if (equippedAbility === 'medic' && medicLevel > 0) {
                 if (medicLives > 0) {
                     medicLives--;
                     triggerMedicReviveAnimation();
                     return;
                 }
-
                 if (!hasRevivedThisRun) {
                     hasRevivedThisRun = true;
                     triggerMedicReviveAnimation();
@@ -1340,7 +1444,6 @@
                 }
             }
 
-            // Normal Game Over sequence
             gameState = 'GAMEOVER';
             const currentScore = Math.floor(score);
 
@@ -1357,9 +1460,9 @@
         }
 
         function triggerMedicReviveAnimation() {
-            obstacles = []; 
-            spawnPausedTimer = 140; 
-            medicReviveTimer = 110; 
+            obstacles = [];
+            spawnPausedTimer = 140;
+            medicReviveTimer = 110;
 
             for (let i = 0; i < 30; i++) {
                 particles.push({
@@ -1387,6 +1490,10 @@
             nextSpawnInterval = 80;
             nextCoinInterval = 250 + Math.floor(Math.random() * 200);
             
+            activeCurse = null;
+            curseTimer = 0;
+            nextCurseThreshold = 800;
+
             abilityCooldownE = (equippedAbility === 'slime') ? 10 * 60 : 0;
             abilityCooldownQ = (equippedAbility === 'slime') ? 10 * 60 : 0;
             
@@ -1407,7 +1514,9 @@
 
             const allowFlying = score >= 120;
             const isFlying = allowFlying && Math.random() < 0.4;
-            const sizeScale = Math.min(1.4, 1 + score / 1200);
+            
+            let sizeScale = Math.min(1.4, 1 + score / 1200);
+            if (activeCurse === 'medium') sizeScale *= 1.25; // Medium Curse increases obstacle size
 
             let isHacked = false;
             if (hackerCharges > 0) {
@@ -1451,6 +1560,9 @@
         }
 
         function spawnCoin() {
+            // Easy curse reduces coin spawn chance by 20%
+            if (activeCurse === 'easy' && Math.random() < 0.2) return;
+
             const isAirCoin = Math.random() < 0.6; 
             const y = isAirCoin ? GROUND_Y - Math.floor(Math.random() * 50 + 60) : GROUND_Y - 20;
 
@@ -1536,8 +1648,23 @@
                 if (medicReviveTimer > 0) {
                     medicReviveTimer--;
                 } else {
-                    gameSpeed += 0.002; 
-                    score += gameSpeed * 0.05;
+                    gameSpeed += 0.002;
+                    let scoreIncr = gameSpeed * 0.05;
+                    score += scoreIncr;
+
+                    // Curse duration tracking
+                    if (activeCurse) {
+                        curseTimer -= scoreIncr;
+                        if (curseTimer <= 0) {
+                            activeCurse = null;
+                        }
+                    }
+
+                    // Check for Curse Milestones every 800 score points
+                    if (score >= nextCurseThreshold) {
+                        nextCurseThreshold += 800;
+                        triggerCursePrompt();
+                    }
                 }
 
                 if (abilityCooldownE > 0) abilityCooldownE--;
@@ -1556,14 +1683,29 @@
                 player.update();
                 player.draw();
 
-                // --- Medic Revive Banner Animation ---
+                // --- CURSE VISUAL EFFECTS OVERLAY ---
+                if (activeCurse === 'easy') {
+                    // Green Mist Particle aura on ground
+                    ctx.fillStyle = 'rgba(0, 255, 100, 0.12)';
+                    ctx.fillRect(0, GROUND_Y - 25, canvas.width, 25);
+                } else if (activeCurse === 'medium') {
+                    // Flame Flicker Effect at bottom
+                    ctx.fillStyle = Math.random() < 0.5 ? 'rgba(255, 120, 0, 0.2)' : 'rgba(255, 50, 0, 0.2)';
+                    ctx.fillRect(0, GROUND_Y - 35, canvas.width, 35);
+                } else if (activeCurse === 'hard') {
+                    // Red Lightning Strobe Effect across screen
+                    if (Math.random() < 0.1) {
+                        ctx.fillStyle = 'rgba(255, 34, 34, 0.18)';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    }
+                }
+
                 if (medicReviveTimer > 0) {
                     ctx.fillStyle = `rgba(0, 255, 100, ${Math.min(0.8, medicReviveTimer / 50)})`;
                     ctx.font = 'bold 26px sans-serif';
                     ctx.fillText('⚡ REVIVED BY MEDIC! ⚡', canvas.width / 2 - 140, 140);
                 }
 
-                // --- Slime Puddles & Companion Blob ---
                 for (let i = slimeFloorPuddles.length - 1; i >= 0; i--) {
                     let p = slimeFloorPuddles[i];
                     p.x -= gameSpeed;
@@ -1620,7 +1762,6 @@
                     }
                 }
 
-                // --- Particles ---
                 for (let i = particles.length - 1; i >= 0; i--) {
                     let pt = particles[i];
                     pt.x += pt.vx;
@@ -1636,7 +1777,6 @@
                     if (pt.life <= 0) particles.splice(i, 1);
                 }
 
-                // --- Obstacles ---
                 spawnTimer++;
                 if (spawnTimer >= nextSpawnInterval) {
                     spawnObstacle();
@@ -1666,7 +1806,6 @@
                     }
                 }
 
-                // --- Coins / Hearts / Money Bags ---
                 coinSpawnTimer++;
                 if (coinSpawnTimer >= nextCoinInterval) {
                     spawnCoin();
@@ -1674,7 +1813,7 @@
                     nextCoinInterval = Math.floor(Math.random() * 200 + 300);
                 }
 
-                const pullRadius = (equippedAbility === 'magnet') ? (magnetLevel === 1 ? 140 : 250) : 0;
+                const pullRadius = (equippedAbility === 'magnet' && activeCurse !== 'hard') ? (magnetLevel === 1 ? 140 : 250) : 0;
                 let currentlyPullingCoin = false;
 
                 for (let i = coins.length - 1; i >= 0; i--) {
@@ -1751,7 +1890,6 @@
 
                 isMagnetActive = currentlyPullingCoin;
 
-                // Purple Lag burst effect
                 if (lagAnimationTimer > 0) {
                     lagAnimationTimer--;
                     ctx.fillStyle = `rgba(176, 0, 255, ${lagAnimationTimer / 40 * 0.4})`;
@@ -1769,12 +1907,22 @@
                 ctx.fillStyle = '#ffd700';
                 ctx.fillText(`Coins: ${totalCoins}`, 250, 35);
 
+                // Display Active Curse Warning on HUD if present
+                if (activeCurse) {
+                    ctx.fillStyle = activeCurse === 'easy' ? '#00ff66' : (activeCurse === 'medium' ? '#ffaa00' : '#ff2222');
+                    ctx.font = 'bold 13px sans-serif';
+                    ctx.fillText(`CURSE (${activeCurse.toUpperCase()}): ${Math.ceil(curseTimer)}pt left`, 20, 60);
+                }
+
                 ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 18px sans-serif';
                 ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}x`, 680, 35);
 
-                // Ability Cooldown / Status HUD Indicators
                 ctx.font = 'bold 14px sans-serif';
-                if (equippedAbility === 'hacker' && hackerLevel > 0) {
+                if (activeCurse === 'hard') {
+                    ctx.fillStyle = '#ff2222';
+                    ctx.fillText(`[⚡ HARD CURSE] ABILITIES DISABLED`, 350, 35);
+                } else if (equippedAbility === 'hacker' && hackerLevel > 0) {
                     if (hackerLvl3Timer > 0) {
                         ctx.fillStyle = '#b000ff';
                         ctx.fillText(`HACK ACTIVE: ${(hackerLvl3Timer / 60).toFixed(1)}s`, 370, 35);
@@ -1815,7 +1963,6 @@
             player.draw();
         }
 
-        // Initialize display
         showHubMenu();
         requestAnimationFrame(gameLoop);
     </script>
