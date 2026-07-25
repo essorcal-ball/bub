@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stickman Jump Hub</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: #000000 !important;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #000000 !important;
+            border: 2px solid #333333;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-color: #000000 !important;
+        }
+
+        /* Overlay UI Screens */
+        .ui-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 5px;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            color: #ff2222;
+            text-shadow: 0 0 10px rgba(255, 34, 34, 0.5);
+        }
+
+        p {
+            font-size: 1rem;
+            margin-bottom: 6px;
+            color: #aaaaaa;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 10px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #000000;
+            background: #ffffff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            background: #e0e0e0;
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        button.secondary {
+            background: #444444;
+            color: #ffffff;
+        }
+
+        button.secondary:hover {
+            background: #555555;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        button.gold {
+            background: #ffd700;
+            color: #000000;
+        }
+
+        button.gold:hover {
+            background: #ffae00;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        button.equipped {
+            background: #00ff66 !important;
+            color: #000 !important;
+        }
+
+        button.danger {
+            background: #ff2222;
+            color: #ffffff;
+        }
+
+        button.danger:hover {
+            background: #cc0000;
+            box-shadow: 0 0 10px rgba(255, 34, 34, 0.5);
+        }
+
+        /* Shop Scrollable Layout */
+        .shop-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .shop-section-title {
+            width: 90%;
+            font-size: 1.5rem;
+            margin: 15px 0 5px 0;
+            color: #00e676;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+            text-align: left;
+        }
+
+        .shop-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 10px 0 20px 0;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .shop-card {
+            background: #11111d;
+            border: 2px solid #333355;
+            border-radius: 8px;
+            padding: 12px;
+            width: 220px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .shop-card.hacker { border-color: #00ff66; }
+        .shop-card.magnet { border-color: #ff3366; }
+        .shop-card.slime { border-color: #00ffaa; }
+
+        .shop-card.skin-default { border-color: #ffffff; }
+        .shop-card.skin-green { border-color: #00ff66; }
+        .shop-card.skin-pirate { border-color: #ffaa00; }
+        .shop-card.skin-robot { border-color: #00ccff; }
+        .shop-card.skin-alien { border-color: #cc00ff; }
+        .shop-card.skin-gold { border-color: #ffd700; }
+
+        .shop-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+
+        .shop-card .level-badge {
+            color: #888888;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .shop-card .desc-box {
+            background: #08080e;
+            border: 1px solid #222233;
+            padding: 6px 8px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            line-height: 1.25;
+            margin-bottom: 6px;
+            color: #dddddd;
+        }
+
+        .card-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .card-actions button {
+            width: 100%;
+            padding: 8px;
+            font-size: 0.85rem;
+        }
+
+        /* Admin Screen Elements */
+        .admin-panel {
+            background: #111118;
+            border: 2px solid #ff0055;
+            border-radius: 8px;
+            padding: 20px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.3);
+            text-align: center;
+        }
+
+        .admin-panel h3 {
+            color: #ff0055;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .admin-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .admin-row input[type="number"], .admin-row input[type="password"] {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ff0055;
+            background: #000;
+            color: #fff;
+            font-size: 1rem;
+            width: 160px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+        <!-- Stickman Jump Hub Menu -->
+        <div id="hub-screen" class="ui-screen">
+            <h1>STICKMAN JUMP</h1>
+            <p><b>SPACE / UP:</b> Jump &nbsp;|&nbsp; <b>S / DOWN:</b> Duck &nbsp;|&nbsp; <b>E / Q:</b> Abilities</p>
+            <p id="hub-highscore" style="color: #00e676; margin-top: 8px;">High Score: 0</p>
+            <p id="hub-coins" style="color: #ffd700;">Total Coins: 0</p>
+            <p id="hub-equipped-ability" style="color: #00ffff; font-weight: bold; margin-top: 4px;">Ability: None</p>
+            <p id="hub-equipped-skin" style="color: #ffaa00; font-weight: bold;">Skin: Classic White</p>
+            <div class="btn-group">
+                <button id="play-btn">Play</button>
+                <button id="shop-btn" class="gold">Shop</button>
+            </div>
+        </div>
+
+        <!-- Shop Screen (Scrollable) -->
+        <div id="shop-screen" class="ui-screen hidden">
+            <div class="shop-wrapper">
+                <h1 style="color: #ffd700;">SHOP</h1>
+                <p id="shop-coins" style="color: #ffd700; font-weight: bold; font-size: 1.2rem;">Coins Available: 0</p>
+                <p id="shop-highscore" style="color: #00e676; font-weight: bold; font-size: 1rem;">High Score: 0</p>
+                
+                <!-- SECTION 1: ABILITIES -->
+                <div class="shop-section-title">⚡ ABILITIES</div>
+                <div class="shop-container">
+                    <!-- Hacker Card -->
+                    <div class="shop-card hacker">
+                        <div>
+                            <h3 style="color:#00ff66;">💻 Hacker</h3>
+                            <div id="hacker-level-text" class="level-badge">Level: 0 / 3</div>
+                            <div id="hacker-current-desc" class="desc-box">Current: Locked</div>
+                            <div id="hacker-next-desc" class="desc-box">Next: Turn 1 obstacle green.</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="buy-hacker-btn" class="gold">Buy Lvl 1 (10 Coins)</button>
+                            <button id="equip-hacker-btn" class="secondary">Equip</button>
+                        </div>
+                    </div>
+
+                    <!-- Magnet Card -->
+                    <div class="shop-card magnet">
+                        <div>
+                            <h3 style="color:#ff3366;">🧲 Magnet</h3>
+                            <div id="magnet-level-text" class="level-badge">Level: 0 / 2</div>
+                            <div id="magnet-current-desc" class="desc-box">Current: Locked</div>
+                            <div id="magnet-next-desc" class="desc-box">Next: Pull nearby coins.</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="buy-magnet-btn" class="gold">Buy Lvl 1 (10 Coins)</button>
+                            <button id="equip-magnet-btn" class="secondary">Equip</button>
+                        </div>
+                    </div>
+
+                    <!-- Slime Card -->
+                    <div class="shop-card slime">
+                        <div>
+                            <h3 style="color:#00ffaa;">🧪 Slime</h3>
+                            <div id="slime-level-text" class="level-badge">Level: 0 / 2</div>
+                            <div id="slime-current-desc" class="desc-box">Current: Locked</div>
+                            <div id="slime-next-desc" class="desc-box">Next: Slow down game speed.</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="buy-slime-btn" class="gold">Buy Lvl 1 (15 Coins)</button>
+                            <button id="equip-slime-btn" class="secondary">Equip</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: SKINS -->
+                <div class="shop-section-title">👕 SKINS (SCORE UNLOCKS)</div>
+                <div class="shop-container">
+                    <!-- Default Skin -->
+                    <div class="shop-card skin-default">
+                        <div>
+                            <h3>⚪ Classic Stickman</h3>
+                            <div class="level-badge">Req: Default</div>
+                            <div class="desc-box">The original iconic stickman racer.</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="equip-skin-default" class="equipped">Equipped</button>
+                        </div>
+                    </div>
+
+                    <!-- Green Skin -->
+                    <div class="shop-card skin-green">
+                        <div>
+                            <h3 style="color: #00ff66;">🟢 Green Stickman</h3>
+                            <div class="level-badge">Req: 1,000 Score</div>
+                            <div id="status-skin-green" class="desc-box">Locked</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="equip-skin-green" class="secondary" disabled>Locked</button>
+                        </div>
+                    </div>
+
+                    <!-- Pirate Skin -->
+                    <div class="shop-card skin-pirate">
+                        <div>
+                            <h3 style="color: #ffaa00;">🏴‍☠️ Pirate Stickman</h3>
+                            <div class="level-badge">Req: 2,000 Score</div>
+                            <div id="status-skin-pirate" class="desc-box">Locked</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="equip-skin-pirate" class="secondary" disabled>Locked</button>
+                        </div>
+                    </div>
+
+                    <!-- Robot Skin -->
+                    <div class="shop-card skin-robot">
+                        <div>
+                            <h3 style="color: #00ccff;">🤖 Robot Stickman</h3>
+                            <div class="level-badge">Req: 3,000 Score</div>
+                            <div id="status-skin-robot" class="desc-box">Locked</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="equip-skin-robot" class="secondary" disabled>Locked</button>
+                        </div>
+                    </div>
+
+                    <!-- Alien Skin -->
+                    <div class="shop-card skin-alien">
+                        <div>
+                            <h3 style="color: #cc00ff;">👽 Alien Stickman</h3>
+                            <div class="level-badge">Req: 4,000 Score</div>
+                            <div id="status-skin-alien" class="desc-box">Locked</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="equip-skin-alien" class="secondary" disabled>Locked</button>
+                        </div>
+                    </div>
+
+                    <!-- Golden Skin -->
+                    <div class="shop-card skin-gold">
+                        <div>
+                            <h3 style="color: #ffd700;">🌟 Golden Stickman</h3>
+                            <div class="level-badge">Req: 5,000 Score</div>
+                            <div id="status-skin-gold" class="desc-box">Locked</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="equip-skin-gold" class="secondary" disabled>Locked</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="shop-back-btn" class="secondary" style="margin-top: 10px;">Back to Hub</button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="ui-screen hidden">
+            <h2>GAME OVER</h2>
+            <p id="final-score">Score: 0</p>
+            <p id="high-score" style="color: #00e676;">High Score: 0</p>
+            <p id="final-coins" style="color: #ffd700;">Total Coins: 0</p>
+            <div class="btn-group">
+                <button id="retry-btn">Try Again</button>
+                <button id="menu-btn" class="secondary">Back to Hub</button>
+            </div>
+        </div>
+
+        <!-- Admin Passcode Screen -->
+        <div id="admin-pass-screen" class="ui-screen hidden">
+            <div class="admin-panel">
+                <h3>🔒 ADMIN AUTHENTICATION</h3>
+                <p style="margin-bottom: 12px;">Enter Passcode:</p>
+                <div class="admin-row">
+                    <input type="password" id="admin-pass-input" placeholder="Passcode">
+                    <button id="admin-login-btn">Submit</button>
+                </div>
+                <p id="admin-pass-error" style="color: #ff3333; font-size: 0.9rem; display: none;">Invalid Passcode!</p>
+                <button id="admin-pass-cancel-btn" class="secondary" style="margin-top: 10px; width: 100%;">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Admin Control Panel Screen -->
+        <div id="admin-panel-screen" class="ui-screen hidden">
+            <div class="admin-panel">
+                <h3 style="color: #00ff66;">⚡ SECRET ADMIN PANEL</h3>
+                <p id="admin-current-coins" style="color: #ffd700; margin-bottom: 15px;">Current Coins: 0</p>
+
+                <!-- Set Coins -->
+                <div class="admin-row">
+                    <input type="number" id="coin-input" placeholder="Amount" value="1000">
+                    <button id="set-coins-btn" class="gold">Set Coins</button>
+                </div>
+
+                <!-- Clear Coins -->
+                <div class="admin-row">
+                    <button id="clear-coins-btn" class="secondary" style="width: 100%;">Clear All Coins (0)</button>
+                </div>
+
+                <!-- Reset All Progress -->
+                <div class="admin-row">
+                    <button id="reset-all-btn" class="danger" style="width: 100%;">🔥 Reset All Progress</button>
+                </div>
+
+                <button id="admin-exit-btn" class="secondary" style="margin-top: 15px; width: 100%;">Exit Admin Panel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // UI Elements
+        const hubScreen = document.getElementById('hub-screen');
+        const shopScreen = document.getElementById('shop-screen');
+        const gameoverScreen = document.getElementById('gameover-screen');
+        const adminPassScreen = document.getElementById('admin-pass-screen');
+        const adminPanelScreen = document.getElementById('admin-panel-screen');
+        
+        const hubHighscoreText = document.getElementById('hub-highscore');
+        const hubCoinsText = document.getElementById('hub-coins');
+        const hubEquippedAbilityText = document.getElementById('hub-equipped-ability');
+        const hubEquippedSkinText = document.getElementById('hub-equipped-skin');
+        const shopCoinsText = document.getElementById('shop-coins');
+        const shopHighscoreText = document.getElementById('shop-highscore');
+        const finalScoreText = document.getElementById('final-score');
+        const highScoreText = document.getElementById('high-score');
+        const finalCoinsText = document.getElementById('final-coins');
+        const adminCurrentCoinsText = document.getElementById('admin-current-coins');
+        
+        // Shop Abilities
+        const hackerLevelText = document.getElementById('hacker-level-text');
+        const hackerCurrentDesc = document.getElementById('hacker-current-desc');
+        const hackerNextDesc = document.getElementById('hacker-next-desc');
+        const buyHackerBtn = document.getElementById('buy-hacker-btn');
+        const equipHackerBtn = document.getElementById('equip-hacker-btn');
+
+        const magnetLevelText = document.getElementById('magnet-level-text');
+        const magnetCurrentDesc = document.getElementById('magnet-current-desc');
+        const magnetNextDesc = document.getElementById('magnet-next-desc');
+        const buyMagnetBtn = document.getElementById('buy-magnet-btn');
+        const equipMagnetBtn = document.getElementById('equip-magnet-btn');
+
+        const slimeLevelText = document.getElementById('slime-level-text');
+        const slimeCurrentDesc = document.getElementById('slime-current-desc');
+        const slimeNextDesc = document.getElementById('slime-next-desc');
+        const buySlimeBtn = document.getElementById('buy-slime-btn');
+        const equipSlimeBtn = document.getElementById('equip-slime-btn');
+
+        // Shop Skins UI
+        const skinButtons = {
+            'default': document.getElementById('equip-skin-default'),
+            'green': document.getElementById('equip-skin-green'),
+            'pirate': document.getElementById('equip-skin-pirate'),
+            'robot': document.getElementById('equip-skin-robot'),
+            'alien': document.getElementById('equip-skin-alien'),
+            'gold': document.getElementById('equip-skin-gold')
+        };
+
+        const skinStatuses = {
+            'green': document.getElementById('status-skin-green'),
+            'pirate': document.getElementById('status-skin-pirate'),
+            'robot': document.getElementById('status-skin-robot'),
+            'alien': document.getElementById('status-skin-alien'),
+            'gold': document.getElementById('status-skin-gold')
+        };
+
+        // Buttons
+        const playBtn = document.getElementById('play-btn');
+        const shopBtn = document.getElementById('shop-btn');
+        const shopBackBtn = document.getElementById('shop-back-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        const menuBtn = document.getElementById('menu-btn');
+
+        // Admin Controls
+        const adminPassInput = document.getElementById('admin-pass-input');
+        const adminLoginBtn = document.getElementById('admin-login-btn');
+        const adminPassCancelBtn = document.getElementById('admin-pass-cancel-btn');
+        const adminPassError = document.getElementById('admin-pass-error');
+        const coinInput = document.getElementById('coin-input');
+        const setCoinsBtn = document.getElementById('set-coins-btn');
+        const clearCoinsBtn = document.getElementById('clear-coins-btn');
+        const resetAllBtn = document.getElementById('reset-all-btn');
+        const adminExitBtn = document.getElementById('admin-exit-btn');
+
+        // Game Constants
+        const GROUND_Y = 320;
+        const GRAVITY = 0.6;
+        const JUMP_FORCE = -12;
+        
+        // Colors
+        const RED_OBSTACLE = '#ff2222';
+        const GREEN_HACKED = '#00ff66';
+        const GOLD_COIN = '#ffd700';
+        const GRAY_GROUND = '#555555';
+        const WHITE_STICKMAN = '#ffffff';
+
+        // Saved Data (LocalStorage)
+        let totalCoins = parseInt(localStorage.getItem('stickman_coins')) || 0;
+        let highScore = parseInt(localStorage.getItem('stickman_highscore')) || 0;
+        let hackerLevel = parseInt(localStorage.getItem('stickman_hacker_lvl')) || 0;
+        let magnetLevel = parseInt(localStorage.getItem('stickman_magnet_lvl')) || 0;
+        let slimeLevel = parseInt(localStorage.getItem('stickman_slime_lvl')) || 0;
+        let equippedAbility = localStorage.getItem('stickman_equipped') || 'none';
+        let equippedSkin = localStorage.getItem('stickman_equipped_skin') || 'default';
+
+        // Game State Variables
+        let gameState = 'HUB';
+        let score = 0;
+        let gameSpeed = 5;
+        let obstacles = [];
+        let coins = [];
+        let particles = [];
+        let spawnTimer = 0;
+        let coinSpawnTimer = 0;
+        let nextSpawnInterval = 100;
+        let nextCoinInterval = 300;
+        let spawnPausedTimer = 0;
+
+        // Ability States
+        let abilityCooldownE = 0;
+        let abilityCooldownQ = 0;
+        let hackerLvl3Timer = 0;
+        let lagAnimationTimer = 0;
+        let hackerCharges = 0;
+        let isMagnetActive = false;
+
+        // Slime Blob active entity
+        let slimeBlob = null;
+        let slimeFloorPuddles = [];
+
+        // Save progress function
+        function saveGameData() {
+            localStorage.setItem('stickman_coins', totalCoins);
+            localStorage.setItem('stickman_highscore', highScore);
+            localStorage.setItem('stickman_hacker_lvl', hackerLevel);
+            localStorage.setItem('stickman_magnet_lvl', magnetLevel);
+            localStorage.setItem('stickman_slime_lvl', slimeLevel);
+            localStorage.setItem('stickman_equipped', equippedAbility);
+            localStorage.setItem('stickman_equipped_skin', equippedSkin);
+        }
+
+        // Player (Stickman) State
+        const player = {
+            x: 80,
+            y: GROUND_Y,
+            vy: 0,
+            radius: 12,
+            height: 50,
+            isDucking: false,
+            isGrounded: true,
+
+            reset() {
+                this.y = GROUND_Y;
+                this.vy = 0;
+                this.height = 50;
+                this.isDucking = false;
+                this.isGrounded = true;
+            },
+
+            jump() {
+                if (this.isGrounded && !this.isDucking) {
+                    this.vy = JUMP_FORCE;
+                    this.isGrounded = false;
+                }
+            },
+
+            duck(shouldDuck) {
+                if (shouldDuck) {
+                    this.isDucking = true;
+                    this.height = 20;
+                } else {
+                    this.isDucking = false;
+                    this.height = 50;
+                }
+            },
+
+            update() {
+                this.vy += GRAVITY;
+                this.y += this.vy;
+
+                if (this.y >= GROUND_Y) {
+                    this.y = GROUND_Y;
+                    this.vy = 0;
+                    this.isGrounded = true;
+                }
+            },
+
+            draw() {
+                const headY = this.y - this.height;
+
+                // Determine Base Skin Color
+                let skinColor = WHITE_STICKMAN;
+                if (equippedSkin === 'green') skinColor = '#00ff66';
+                else if (equippedSkin === 'pirate') skinColor = '#ffaa00';
+                else if (equippedSkin === 'robot') skinColor = '#00ccff';
+                else if (equippedSkin === 'alien') skinColor = '#cc00ff';
+                else if (equippedSkin === 'gold') skinColor = '#ffd700';
+
+                let strokeWidth = 3;
+
+                // Hacker Level 3 override
+                if (hackerLvl3Timer > 0) {
+                    skinColor = '#b000ff';
+                    strokeWidth = Math.random() < 0.3 ? 5 : 3;
+                }
+
+                ctx.strokeStyle = skinColor;
+                ctx.lineWidth = strokeWidth;
+                ctx.lineCap = 'round';
+
+                let offsetX = (hackerLvl3Timer > 0 && Math.random() < 0.4) ? (Math.random() * 6 - 3) : 0;
+
+                // --- ALIEN AURA EFFECT ---
+                if (equippedSkin === 'alien') {
+                    ctx.shadowColor = '#00ffaa';
+                    ctx.shadowBlur = 10;
+                } else if (equippedSkin === 'gold') {
+                    ctx.shadowColor = '#ffd700';
+                    ctx.shadowBlur = 12;
+
+                    // Gold Sparkles
+                    if (Math.random() < 0.3) {
+                        particles.push({
+                            x: this.x + Math.random() * 20 - 10,
+                            y: headY + Math.random() * 40 - 20,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: -Math.random() * 2,
+                            life: 15,
+                            color: '#ffffff'
+                        });
+                    }
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+
+                // --- DRAW HEAD ---
+                if (equippedSkin === 'robot') {
+                    // Square Robot Head
+                    ctx.fillStyle = '#081020';
+                    ctx.fillRect(this.x - 12 + offsetX, headY - 12, 24, 24);
+                    ctx.strokeRect(this.x - 12 + offsetX, headY - 12, 24, 24);
+
+                    // Antenna
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, headY - 12);
+                    ctx.lineTo(this.x + offsetX, headY - 20);
+                    ctx.stroke();
+                    ctx.fillStyle = '#00ccff';
+                    ctx.beginPath();
+                    ctx.arc(this.x + offsetX, headY - 21, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Blue Robot Visor
+                    ctx.fillStyle = '#00ffff';
+                    ctx.fillRect(this.x - 8 + offsetX, headY - 5, 16, 5);
+                } else if (equippedSkin === 'alien') {
+                    // Oval Alien Head
+                    ctx.fillStyle = '#1a0033';
+                    ctx.beginPath();
+                    ctx.ellipse(this.x + offsetX, headY, 14, 18, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Alien Black Eyes
+                    ctx.fillStyle = '#000000';
+                    ctx.beginPath();
+                    ctx.ellipse(this.x - 5 + offsetX, headY - 2, 4, 7, -Math.PI / 6, 0, Math.PI * 2);
+                    ctx.ellipse(this.x + 5 + offsetX, headY - 2, 4, 7, Math.PI / 6, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // Standard Circle Head
+                    ctx.beginPath();
+                    ctx.arc(this.x + offsetX, headY, this.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // PIRATE HAT & EYE PATCH
+                    if (equippedSkin === 'pirate') {
+                        // Eye Patch
+                        ctx.fillStyle = '#000000';
+                        ctx.beginPath();
+                        ctx.arc(this.x + 4 + offsetX, headY - 2, 4, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Strap
+                        ctx.strokeStyle = '#000000';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.moveTo(this.x - 12 + offsetX, headY - 8);
+                        ctx.lineTo(this.x + 12 + offsetX, headY + 2);
+                        ctx.stroke();
+
+                        // Bandanna / Pirate Hat
+                        ctx.fillStyle = '#cc0000';
+                        ctx.beginPath();
+                        ctx.arc(this.x + offsetX, headY - 4, this.radius + 2, Math.PI, 0, false);
+                        ctx.fill();
+                        
+                        ctx.strokeStyle = skinColor;
+                        ctx.lineWidth = strokeWidth;
+                    }
+                }
+
+                ctx.shadowBlur = 0; // Reset Shadow Blur
+
+                // --- DRAW BODY & LIMBS ---
+                if (this.isDucking && this.isGrounded) {
+                    // Crouched Body
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
+                    ctx.lineTo(this.x - 8 + offsetX, this.y - 8);
+                    ctx.stroke();
+
+                    // Crouched Legs
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - 8 + offsetX, this.y - 8);
+                    ctx.lineTo(this.x - 18 + offsetX, this.y);
+                    ctx.moveTo(this.x - 8 + offsetX, this.y - 8);
+                    ctx.lineTo(this.x + 8 + offsetX, this.y);
+                    ctx.stroke();
+
+                    // Crouched Arms
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, headY + this.radius + 2);
+                    ctx.lineTo(this.x + 10 + offsetX, headY + this.radius + 8);
+                    ctx.stroke();
+                } else {
+                    // Normal Standing Body
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
+                    ctx.lineTo(this.x + offsetX, this.y - 15);
+                    ctx.stroke();
+
+                    // Legs
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, this.y - 15);
+                    ctx.lineTo(this.x - 10 + offsetX, this.y);
+                    ctx.moveTo(this.x + offsetX, this.y - 15);
+                    ctx.lineTo(this.x + 10 + offsetX, this.y);
+                    ctx.stroke();
+
+                    // Arms
+                    ctx.beginPath();
+                    const armY = headY + this.radius + 10;
+                    if (!this.isGrounded) {
+                        ctx.moveTo(this.x - 12 + offsetX, armY - 8);
+                        ctx.lineTo(this.x + offsetX, armY);
+                        ctx.lineTo(this.x + 12 + offsetX, armY - 8);
+                    } else {
+                        ctx.moveTo(this.x - 10 + offsetX, armY + 5);
+                        ctx.lineTo(this.x + offsetX, armY);
+                        ctx.lineTo(this.x + 10 + offsetX, armY + 5);
+                    }
+                    ctx.stroke();
+                }
+
+                // DETAILED & REALISTIC RED/BLUE HORSESHOE MAGNET (Only visible when active)
+                if (equippedAbility === 'magnet' && magnetLevel > 0 && isMagnetActive) {
+                    const magX = this.x + 18 + offsetX;
+                    const magY = headY + 12;
+
+                    ctx.strokeStyle = '#aaaaaa';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.arc(magX, magY, 6, Math.PI, 0, false);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#ff2244';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(magX - 6, magY);
+                    ctx.lineTo(magX - 6, magY + 7);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#2266ff';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(magX + 6, magY);
+                    ctx.lineTo(magX + 6, magY + 7);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#dddddd';
+                    ctx.fillRect(magX - 8, magY + 7, 4, 2);
+                    ctx.fillRect(magX + 4, magY + 7, 4, 2);
+                }
+
+                // Glitch effect if Hacker Lvl 3 active
+                if (hackerLvl3Timer > 0 && Math.random() < 0.5) {
+                    ctx.strokeStyle = '#00ffff';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    let gx = this.x + Math.random() * 40 - 20;
+                    let gy = headY + Math.random() * 60;
+                    ctx.moveTo(gx - 10, gy);
+                    ctx.lineTo(gx + 10, gy);
+                    ctx.stroke();
+                }
+            }
+        };
+
+        // Ability Logic triggers
+        function triggerAbilityE() {
+            if (gameState !== 'PLAYING') return;
+
+            if (equippedAbility === 'hacker' && hackerLevel > 0 && abilityCooldownE <= 0) {
+                if (hackerLevel === 1) {
+                    let nearest = getUpcomingObstacles(1);
+                    nearest.forEach(obs => obs.hacked = true);
+                    abilityCooldownE = 6.5 * 60;
+                } else if (hackerLevel === 2) {
+                    hackerCharges = 3;
+                    let nearest = getUpcomingObstacles(3);
+                    nearest.forEach(obs => {
+                        if (hackerCharges > 0 && !obs.hacked) {
+                            obs.hacked = true;
+                            hackerCharges--;
+                        }
+                    });
+                    abilityCooldownE = 15.0 * 60;
+                } else if (hackerLevel === 3) {
+                    hackerLvl3Timer = 9.0 * 60;
+                    abilityCooldownE = 15.0 * 60;
+                }
+            }
+
+            if (equippedAbility === 'slime' && slimeLevel > 0 && abilityCooldownE <= 0) {
+                if (slimeLevel === 1) {
+                    throwSlimePuddle();
+                    gameSpeed = Math.max(3.5, gameSpeed * 0.6);
+                    abilityCooldownE = 20.0 * 60;
+                } else if (slimeLevel === 2) {
+                    slimeBlob = {
+                        x: player.x + 20,
+                        y: GROUND_Y,
+                        targetObstaclesRemaining: 5,
+                        state: 'RUNNING'
+                    };
+                    abilityCooldownE = 20.0 * 60;
+                }
+            }
+        }
+
+        function triggerAbilityQ() {
+            if (gameState !== 'PLAYING') return;
+
+            if (equippedAbility === 'slime' && slimeLevel === 2 && abilityCooldownQ <= 0) {
+                throwSlimePuddle();
+                gameSpeed = Math.max(3.5, gameSpeed * 0.6);
+                abilityCooldownQ = 18.0 * 60;
+            }
+        }
+
+        function throwSlimePuddle() {
+            slimeFloorPuddles.push({
+                x: player.x + 40,
+                width: 70,
+                life: 60
+            });
+        }
+
+        function getUpcomingObstacles(count) {
+            return obstacles
+                .filter(obs => obs.x + obs.width > player.x && !obs.hacked)
+                .sort((a, b) => a.x - b.x)
+                .slice(0, count);
+        }
+
+        // Input Listeners
+        window.addEventListener('keydown', (e) => {
+            if (e.shiftKey && (e.code === 'KeyP' || e.key === 'P')) {
+                e.preventDefault();
+                openAdminPassPrompt();
+                return;
+            }
+
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                if (gameState === 'PLAYING') player.jump();
+            }
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+                e.preventDefault();
+                if (gameState === 'PLAYING') player.duck(true);
+            }
+            if (e.code === 'KeyE') {
+                e.preventDefault();
+                triggerAbilityE();
+            }
+            if (e.code === 'KeyQ') {
+                e.preventDefault();
+                triggerAbilityQ();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+                if (gameState === 'PLAYING') player.duck(false);
+            }
+        });
+
+        canvas.addEventListener('mousedown', () => {
+            if (gameState === 'PLAYING') player.jump();
+        });
+
+        // UI Event Listeners
+        playBtn.addEventListener('click', startGame);
+        shopBtn.addEventListener('click', openShop);
+        shopBackBtn.addEventListener('click', showHubMenu);
+        retryBtn.addEventListener('click', startGame);
+        menuBtn.addEventListener('click', showHubMenu);
+
+        // Shop Buy & Equip Abilities
+        buyHackerBtn.addEventListener('click', () => purchaseAbility('hacker'));
+        buyMagnetBtn.addEventListener('click', () => purchaseAbility('magnet'));
+        buySlimeBtn.addEventListener('click', () => purchaseAbility('slime'));
+
+        equipHackerBtn.addEventListener('click', () => equipAbility('hacker'));
+        equipMagnetBtn.addEventListener('click', () => equipAbility('magnet'));
+        equipSlimeBtn.addEventListener('click', () => equipAbility('slime'));
+
+        // Skin Equip Listeners
+        skinButtons['default'].addEventListener('click', () => equipSkin('default'));
+        skinButtons['green'].addEventListener('click', () => equipSkin('green'));
+        skinButtons['pirate'].addEventListener('click', () => equipSkin('pirate'));
+        skinButtons['robot'].addEventListener('click', () => equipSkin('robot'));
+        skinButtons['alien'].addEventListener('click', () => equipSkin('alien'));
+        skinButtons['gold'].addEventListener('click', () => equipSkin('gold'));
+
+        // Admin Listeners
+        adminLoginBtn.addEventListener('click', submitAdminPass);
+        adminPassCancelBtn.addEventListener('click', showHubMenu);
+        adminPassInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') submitAdminPass();
+        });
+
+        setCoinsBtn.addEventListener('click', () => {
+            const val = parseInt(coinInput.value) || 0;
+            totalCoins = Math.max(0, val);
+            saveGameData();
+            updateAdminPanelUI();
+        });
+
+        clearCoinsBtn.addEventListener('click', () => {
+            totalCoins = 0;
+            saveGameData();
+            updateAdminPanelUI();
+        });
+
+        resetAllBtn.addEventListener('click', () => {
+            totalCoins = 0;
+            highScore = 0;
+            hackerLevel = 0;
+            magnetLevel = 0;
+            slimeLevel = 0;
+            equippedAbility = 'none';
+            equippedSkin = 'default';
+            saveGameData();
+            updateAdminPanelUI();
+            alert("All progress has been fully reset!");
+        });
+
+        adminExitBtn.addEventListener('click', showHubMenu);
+
+        // Admin Functions
+        function openAdminPassPrompt() {
+            adminPassInput.value = '';
+            adminPassError.style.display = 'none';
+            adminPassScreen.classList.remove('hidden');
+            adminPassInput.focus();
+        }
+
+        function submitAdminPass() {
+            if (adminPassInput.value === 'bub') {
+                adminPassScreen.classList.add('hidden');
+                openAdminPanel();
+            } else {
+                adminPassError.style.display = 'block';
+            }
+        }
+
+        function openAdminPanel() {
+            updateAdminPanelUI();
+            adminPanelScreen.classList.remove('hidden');
+        }
+
+        function updateAdminPanelUI() {
+            adminCurrentCoinsText.textContent = `Current Coins: ${totalCoins}`;
+        }
+
+        // Shop Interface Management
+        function updateShopUI() {
+            shopCoinsText.textContent = `Coins Available: ${totalCoins}`;
+            shopHighscoreText.textContent = `High Score: ${highScore}`;
+
+            // --- ABILITIES UI ---
+            hackerLevelText.textContent = `Level: ${hackerLevel} / 3`;
+            if (hackerLevel === 0) {
+                hackerCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
+                hackerNextDesc.innerHTML = `<b>Lvl 1:</b> Hack 1 obstacle green. (CD: 6.5s)`;
+                buyHackerBtn.textContent = `Buy Lvl 1 (10 Coins)`;
+                buyHackerBtn.disabled = totalCoins < 10;
+            } else if (hackerLevel === 1) {
+                hackerCurrentDesc.innerHTML = `<b>Lvl 1:</b> Hack 1 obstacle green. (CD: 6.5s)`;
+                hackerNextDesc.innerHTML = `<b>Lvl 2:</b> Hack NEXT 3 obstacles! (CD: 15s)`;
+                buyHackerBtn.textContent = `Upgrade Lvl 2 (35 Coins)`;
+                buyHackerBtn.disabled = totalCoins < 35;
+            } else if (hackerLevel === 2) {
+                hackerCurrentDesc.innerHTML = `<b>Lvl 2:</b> Hack next 3 obstacles! (CD: 15s)`;
+                hackerNextDesc.innerHTML = `<b>Lvl 3:</b> 9s Invincibility mode! (CD: 15s)`;
+                buyHackerBtn.textContent = `Upgrade Lvl 3 (100 Coins)`;
+                buyHackerBtn.disabled = totalCoins < 100;
+            } else {
+                hackerCurrentDesc.innerHTML = `<b>Lvl 3 MAX:</b> 9s Invincibility + Lag Burst! (CD: 15s)`;
+                hackerNextDesc.innerHTML = `<b>Next:</b> MAX LEVEL`;
+                buyHackerBtn.textContent = `MAXED`;
+                buyHackerBtn.disabled = true;
+            }
+            equipHackerBtn.disabled = hackerLevel === 0;
+            equipHackerBtn.textContent = equippedAbility === 'hacker' ? 'EQUIPPED' : 'Equip';
+            equipHackerBtn.className = equippedAbility === 'hacker' ? 'equipped' : 'secondary';
+
+            magnetLevelText.textContent = `Level: ${magnetLevel} / 2`;
+            if (magnetLevel === 0) {
+                magnetCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
+                magnetNextDesc.innerHTML = `<b>Lvl 1:</b> Magnet pulls nearby coins to you.`;
+                buyMagnetBtn.textContent = `Buy Lvl 1 (10 Coins)`;
+                buyMagnetBtn.disabled = totalCoins < 10;
+            } else if (magnetLevel === 1) {
+                magnetCurrentDesc.innerHTML = `<b>Lvl 1:</b> Pulls nearby coins to you.`;
+                magnetNextDesc.innerHTML = `<b>Lvl 2:</b> Farther reach + 5% chance for Money Bags (5 Coins)!`;
+                buyMagnetBtn.textContent = `Upgrade Lvl 2 (40 Coins)`;
+                buyMagnetBtn.disabled = totalCoins < 40;
+            } else {
+                magnetCurrentDesc.innerHTML = `<b>Lvl 2 MAX:</b> Farther magnetic pull + 5% Money Bags!`;
+                magnetNextDesc.innerHTML = `<b>Next:</b> MAX LEVEL`;
+                buyMagnetBtn.textContent = `MAXED`;
+                buyMagnetBtn.disabled = true;
+            }
+            equipMagnetBtn.disabled = magnetLevel === 0;
+            equipMagnetBtn.textContent = equippedAbility === 'magnet' ? 'EQUIPPED' : 'Equip';
+            equipMagnetBtn.className = equippedAbility === 'magnet' ? 'equipped' : 'secondary';
+
+            slimeLevelText.textContent = `Level: ${slimeLevel} / 2`;
+            if (slimeLevel === 0) {
+                slimeCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
+                slimeNextDesc.innerHTML = `<b>Lvl 1:</b> Throw slime on floor to slow game speed. (CD: 20s)`;
+                buySlimeBtn.textContent = `Buy Lvl 1 (15 Coins)`;
+                buySlimeBtn.disabled = totalCoins < 15;
+            } else if (slimeLevel === 1) {
+                slimeCurrentDesc.innerHTML = `<b>Lvl 1:</b> Throw floor slime to slow game. (CD: 20s)`;
+                slimeNextDesc.innerHTML = `<b>Lvl 2:</b> Add [E] Slime Blob companion to shrink 5 obstacles!`;
+                buySlimeBtn.textContent = `Upgrade Lvl 2 (65 Coins)`;
+                buySlimeBtn.disabled = totalCoins < 65;
+            } else {
+                slimeCurrentDesc.innerHTML = `<b>Lvl 2 MAX:</b> [Q] Slowdown (18s CD) | [E] Slime Blob shrinks 5 obstacles (20s CD)!`;
+                slimeNextDesc.innerHTML = `<b>Next:</b> MAX LEVEL`;
+                buySlimeBtn.textContent = `MAXED`;
+                buySlimeBtn.disabled = true;
+            }
+            equipSlimeBtn.disabled = slimeLevel === 0;
+            equipSlimeBtn.textContent = equippedAbility === 'slime' ? 'EQUIPPED' : 'Equip';
+            equipSlimeBtn.className = equippedAbility === 'slime' ? 'equipped' : 'secondary';
+
+            // --- SKINS UI ---
+            const skinRequirements = {
+                'green': 1000,
+                'pirate': 2000,
+                'robot': 3000,
+                'alien': 4000,
+                'gold': 5000
+            };
+
+            // Update Default Skin
+            skinButtons['default'].textContent = equippedSkin === 'default' ? 'EQUIPPED' : 'Equip';
+            skinButtons['default'].className = equippedSkin === 'default' ? 'equipped' : 'secondary';
+
+            // Update Unlockable Skins
+            Object.keys(skinRequirements).forEach(skinKey => {
+                const req = skinRequirements[skinKey];
+                const btn = skinButtons[skinKey];
+                const status = skinStatuses[skinKey];
+
+                if (highScore >= req) {
+                    status.innerHTML = `<b style="color:#00ff66;">UNLOCKED!</b>`;
+                    btn.disabled = false;
+                    if (equippedSkin === skinKey) {
+                        btn.textContent = 'EQUIPPED';
+                        btn.className = 'equipped';
+                    } else {
+                        btn.textContent = 'Equip';
+                        btn.className = 'secondary';
+                    }
+                } else {
+                    status.innerHTML = `<span style="color:#ff4444;">Reach ${req.toLocaleString()} score</span>`;
+                    btn.disabled = true;
+                    btn.textContent = 'Locked';
+                    btn.className = 'secondary';
+                }
+            });
+        }
+
+        function purchaseAbility(ability) {
+            if (ability === 'hacker') {
+                if (hackerLevel === 0 && totalCoins >= 10) { totalCoins -= 10; hackerLevel = 1; equippedAbility = 'hacker'; }
+                else if (hackerLevel === 1 && totalCoins >= 35) { totalCoins -= 35; hackerLevel = 2; }
+                else if (hackerLevel === 2 && totalCoins >= 100) { totalCoins -= 100; hackerLevel = 3; }
+            } else if (ability === 'magnet') {
+                if (magnetLevel === 0 && totalCoins >= 10) { totalCoins -= 10; magnetLevel = 1; equippedAbility = 'magnet'; }
+                else if (magnetLevel === 1 && totalCoins >= 40) { totalCoins -= 40; magnetLevel = 2; }
+            } else if (ability === 'slime') {
+                if (slimeLevel === 0 && totalCoins >= 15) { totalCoins -= 15; slimeLevel = 1; equippedAbility = 'slime'; }
+                else if (slimeLevel === 1 && totalCoins >= 65) { totalCoins -= 65; slimeLevel = 2; }
+            }
+            saveGameData();
+            updateShopUI();
+        }
+
+        function equipAbility(ability) {
+            if (equippedAbility === ability) {
+                equippedAbility = 'none';
+            } else {
+                equippedAbility = ability;
+            }
+            saveGameData();
+            updateShopUI();
+        }
+
+        function equipSkin(skinKey) {
+            equippedSkin = skinKey;
+            saveGameData();
+            updateShopUI();
+        }
+
+        // Navigation Functions
+        function showHubMenu() {
+            gameState = 'HUB';
+            hubHighscoreText.textContent = `High Score: ${highScore}`;
+            hubCoinsText.textContent = `Total Coins: ${totalCoins}`;
+            hubEquippedAbilityText.textContent = `Ability: ${equippedAbility.toUpperCase()}`;
+
+            let skinDisplayName = 'Classic White';
+            if (equippedSkin === 'green') skinDisplayName = 'Green Stickman';
+            if (equippedSkin === 'pirate') skinDisplayName = 'Pirate Stickman';
+            if (equippedSkin === 'robot') skinDisplayName = 'Robot Stickman';
+            if (equippedSkin === 'alien') skinDisplayName = 'Alien Stickman';
+            if (equippedSkin === 'gold') skinDisplayName = 'Golden Stickman';
+
+            hubEquippedSkinText.textContent = `Skin: ${skinDisplayName}`;
+            
+            hubScreen.classList.remove('hidden');
+            shopScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+            adminPassScreen.classList.add('hidden');
+            adminPanelScreen.classList.add('hidden');
+            resetGameValues();
+            renderBackgroundOnly();
+        }
+
+        function openShop() {
+            gameState = 'SHOP';
+            updateShopUI();
+            shopScreen.classList.remove('hidden');
+            hubScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+            adminPassScreen.classList.add('hidden');
+            adminPanelScreen.classList.add('hidden');
+        }
+
+        function startGame() {
+            gameState = 'PLAYING';
+            resetGameValues();
+            hubScreen.classList.add('hidden');
+            shopScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+            adminPassScreen.classList.add('hidden');
+            adminPanelScreen.classList.add('hidden');
+        }
+
+        function triggerGameOver() {
+            gameState = 'GAMEOVER';
+            const currentScore = Math.floor(score);
+
+            if (currentScore > highScore) {
+                highScore = currentScore;
+            }
+
+            saveGameData();
+
+            finalScoreText.textContent = `Score: ${currentScore}`;
+            highScoreText.textContent = `High Score: ${highScore}`;
+            finalCoinsText.textContent = `Total Coins: ${totalCoins}`;
+            gameoverScreen.classList.remove('hidden');
+        }
+
+        function resetGameValues() {
+            score = 0;
+            gameSpeed = 5;
+            obstacles = [];
+            coins = [];
+            particles = [];
+            slimeFloorPuddles = [];
+            slimeBlob = null;
+            spawnTimer = 0;
+            coinSpawnTimer = 0;
+            spawnPausedTimer = 0;
+            nextSpawnInterval = 80;
+            nextCoinInterval = 250 + Math.floor(Math.random() * 200);
+            
+            abilityCooldownE = (equippedAbility === 'slime') ? 10 * 60 : 0;
+            abilityCooldownQ = (equippedAbility === 'slime') ? 10 * 60 : 0;
+            
+            hackerLvl3Timer = 0;
+            lagAnimationTimer = 0;
+            hackerCharges = 0;
+            isMagnetActive = false;
+            player.reset();
+        }
+
+        function spawnObstacle() {
+            if (spawnPausedTimer > 0) return;
+
+            const allowFlying = score >= 120;
+            const isFlying = allowFlying && Math.random() < 0.4;
+            const sizeScale = Math.min(1.4, 1 + score / 1200);
+
+            let isHacked = false;
+            if (hackerCharges > 0) {
+                isHacked = true;
+                hackerCharges--;
+            }
+
+            if (isFlying) {
+                const width = Math.floor((Math.random() * 30 + 40) * sizeScale);
+                const isTallAir = Math.random() < 0.5;
+                let y, height;
+
+                if (isTallAir) {
+                    y = 0; 
+                    height = GROUND_Y - 32;
+                } else {
+                    y = GROUND_Y - 55;
+                    height = 25;
+                }
+
+                obstacles.push({ x: canvas.width, y, width, height, hacked: isHacked, isFlying: true });
+            } else {
+                const width = Math.min(110, Math.floor((Math.random() * 70 + 30) * sizeScale));
+                
+                let height;
+                if (width > 75) {
+                    height = Math.floor((Math.random() * 12 + 22) * sizeScale);
+                } else {
+                    height = Math.min(52, Math.floor((Math.random() * 35 + 25) * sizeScale));
+                }
+
+                obstacles.push({
+                    x: canvas.width,
+                    y: GROUND_Y - height,
+                    width,
+                    height,
+                    hacked: isHacked,
+                    isFlying: false
+                });
+            }
+        }
+
+        function spawnCoin() {
+            const isAirCoin = Math.random() < 0.6; 
+            const y = isAirCoin ? GROUND_Y - Math.floor(Math.random() * 50 + 60) : GROUND_Y - 20;
+
+            const isMoneyBag = (equippedAbility === 'magnet' && magnetLevel === 2 && Math.random() < 0.05);
+
+            coins.push({
+                x: canvas.width,
+                y: y,
+                radius: isMoneyBag ? 14 : 10,
+                isBag: isMoneyBag,
+                value: isMoneyBag ? 5 : 1
+            });
+        }
+
+        function checkCollision(player, obs) {
+            if (obs.hacked || hackerLvl3Timer > 0) return false;
+
+            const playerLeft = player.x - 8;
+            const playerRight = player.x + 8;
+            const playerTop = player.y - player.height - player.radius;
+            const playerBottom = player.y;
+
+            return (
+                playerRight > obs.x &&
+                playerLeft < obs.x + obs.width &&
+                playerBottom > obs.y &&
+                playerTop < obs.y + obs.height
+            );
+        }
+
+        function checkCoinCollection(player, coin) {
+            const playerLeft = player.x - 12;
+            const playerRight = player.x + 12;
+            const playerTop = player.y - player.height - player.radius;
+            const playerBottom = player.y;
+
+            const coinLeft = coin.x - coin.radius;
+            const coinRight = coin.x + coin.radius;
+            const coinTop = coin.y - coin.radius;
+            const coinBottom = coin.y + coin.radius;
+
+            return (
+                playerRight > coinLeft &&
+                playerLeft < coinRight &&
+                playerBottom > coinTop &&
+                playerTop < coinBottom
+            );
+        }
+
+        function drawEnvironment() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = GRAY_GROUND;
+            ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+
+            ctx.strokeStyle = '#777777';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, GROUND_Y);
+            ctx.lineTo(canvas.width, GROUND_Y);
+            ctx.stroke();
+        }
+
+        // Main Game Loop
+        function gameLoop() {
+            drawEnvironment();
+
+            if (gameState === 'PLAYING') {
+                gameSpeed += 0.002; 
+                score += gameSpeed * 0.05;
+
+                if (abilityCooldownE > 0) abilityCooldownE--;
+                if (abilityCooldownQ > 0) abilityCooldownQ--;
+                if (spawnPausedTimer > 0) spawnPausedTimer--;
+
+                if (hackerLvl3Timer > 0) {
+                    hackerLvl3Timer--;
+                    if (hackerLvl3Timer === 0) {
+                        lagAnimationTimer = 40;
+                        obstacles = [];
+                        spawnPausedTimer = 150;
+                    }
+                }
+
+                player.update();
+                player.draw();
+
+                // --- Handle Slime Puddles & Companion Blob ---
+                for (let i = slimeFloorPuddles.length - 1; i >= 0; i--) {
+                    let p = slimeFloorPuddles[i];
+                    p.x -= gameSpeed;
+                    p.life--;
+
+                    ctx.fillStyle = '#00ff66';
+                    ctx.beginPath();
+                    ctx.ellipse(p.x, GROUND_Y - 2, p.width / 2, 6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (p.life <= 0) slimeFloorPuddles.splice(i, 1);
+                }
+
+                if (slimeBlob) {
+                    slimeBlob.x += (gameSpeed + 1.2); 
+
+                    // Half-Circle Dome Slime
+                    ctx.fillStyle = '#00ffaa';
+                    ctx.beginPath();
+                    ctx.arc(slimeBlob.x, GROUND_Y, 20, Math.PI, 0, false);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Single Eye
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(slimeBlob.x + 4, GROUND_Y - 10, 6, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#000000';
+                    ctx.beginPath();
+                    ctx.arc(slimeBlob.x + 6, GROUND_Y - 10, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Obstacle shrinking
+                    obstacles.forEach(obs => {
+                        if (!obs.shunk && slimeBlob.x > obs.x) {
+                            obs.shunk = true;
+                            obs.height = Math.max(8, obs.height * 0.3);
+                            if (!obs.isFlying) obs.y = GROUND_Y - obs.height;
+                            slimeBlob.targetObstaclesRemaining--;
+                        }
+                    });
+
+                    if (slimeBlob.targetObstaclesRemaining <= 0 || slimeBlob.x > canvas.width + 50) {
+                        for (let k = 0; k < 12; k++) {
+                            particles.push({
+                                x: slimeBlob.x,
+                                y: GROUND_Y - 5,
+                                vx: (Math.random() - 0.5) * 6,
+                                vy: -Math.random() * 5,
+                                life: 25,
+                                color: '#00ffaa'
+                            });
+                        }
+                        slimeBlob = null;
+                    }
+                }
+
+                // --- Handle Particles ---
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let pt = particles[i];
+                    pt.x += pt.vx;
+                    pt.y += pt.vy;
+                    pt.vy += 0.3;
+                    pt.life--;
+
+                    ctx.fillStyle = pt.color;
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (pt.life <= 0) particles.splice(i, 1);
+                }
+
+                // --- Handle Obstacles ---
+                spawnTimer++;
+                if (spawnTimer >= nextSpawnInterval) {
+                    spawnObstacle();
+                    spawnTimer = 0;
+                    nextSpawnInterval = Math.floor(Math.random() * 40 + 450 / gameSpeed);
+                }
+
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obs = obstacles[i];
+                    obs.x -= gameSpeed;
+
+                    ctx.fillStyle = obs.hacked ? GREEN_HACKED : RED_OBSTACLE;
+                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+                    if (obs.hacked) {
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+                    }
+
+                    if (checkCollision(player, obs)) {
+                        triggerGameOver();
+                    }
+
+                    if (obs.x + obs.width < 0) {
+                        obstacles.splice(i, 1);
+                    }
+                }
+
+                // --- Handle Coins & Conditional Magnet Attraction ---
+                coinSpawnTimer++;
+                if (coinSpawnTimer >= nextCoinInterval) {
+                    spawnCoin();
+                    coinSpawnTimer = 0;
+                    nextCoinInterval = Math.floor(Math.random() * 200 + 300);
+                }
+
+                const pullRadius = (equippedAbility === 'magnet') ? (magnetLevel === 1 ? 140 : 250) : 0;
+                let currentlyPullingCoin = false;
+
+                for (let i = coins.length - 1; i >= 0; i--) {
+                    const coin = coins[i];
+                    coin.x -= gameSpeed;
+
+                    if (pullRadius > 0) {
+                        const dx = (player.x) - coin.x;
+                        const dy = (player.y - player.height / 2) - coin.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < pullRadius) {
+                            currentlyPullingCoin = true;
+                            coin.x += (dx / dist) * 7;
+                            coin.y += (dy / dist) * 7;
+                        }
+                    }
+
+                    // Render Coins / Money Bags
+                    if (coin.isBag) {
+                        ctx.fillStyle = '#8b4513';
+                        ctx.beginPath();
+                        ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = GOLD_COIN;
+                        ctx.font = 'bold 12px sans-serif';
+                        ctx.fillText('$', coin.x - 4, coin.y + 4);
+                    } else {
+                        ctx.fillStyle = GOLD_COIN;
+                        ctx.beginPath();
+                        ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                    }
+
+                    if (checkCoinCollection(player, coin)) {
+                        totalCoins += coin.value;
+                        saveGameData();
+                        coins.splice(i, 1);
+                        continue;
+                    }
+
+                    if (coin.x + coin.radius < 0) {
+                        coins.splice(i, 1);
+                    }
+                }
+
+                isMagnetActive = currentlyPullingCoin;
+
+                // Render Purple Lag burst effect
+                if (lagAnimationTimer > 0) {
+                    lagAnimationTimer--;
+                    ctx.fillStyle = `rgba(176, 0, 255, ${lagAnimationTimer / 40 * 0.4})`;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+
+                // Render HUD
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.fillText(`Score: ${Math.floor(score)}`, 20, 35);
+                
+                ctx.fillStyle = '#00e676';
+                ctx.fillText(`High: ${highScore}`, 140, 35);
+
+                ctx.fillStyle = '#ffd700';
+                ctx.fillText(`Coins: ${totalCoins}`, 250, 35);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}x`, 680, 35);
+
+                // Ability Cooldown HUD indicator
+                ctx.font = 'bold 14px sans-serif';
+                if (equippedAbility === 'hacker' && hackerLevel > 0) {
+                    if (hackerLvl3Timer > 0) {
+                        ctx.fillStyle = '#b000ff';
+                        ctx.fillText(`HACK ACTIVE: ${(hackerLvl3Timer / 60).toFixed(1)}s`, 370, 35);
+                    } else if (abilityCooldownE > 0) {
+                        ctx.fillStyle = '#ff3333';
+                        ctx.fillText(`[E] Hacker: ${(abilityCooldownE / 60).toFixed(1)}s`, 370, 35);
+                    } else {
+                        ctx.fillStyle = '#00ff66';
+                        ctx.fillText(`[E] Hacker READY!`, 370, 35);
+                    }
+                } else if (equippedAbility === 'slime' && slimeLevel > 0) {
+                    let txt = '';
+                    if (slimeLevel === 1) {
+                        txt = abilityCooldownE > 0 ? `[E] Slime Slow: ${(abilityCooldownE / 60).toFixed(1)}s` : `[E] Slime Slow READY!`;
+                    } else {
+                        let qTxt = abilityCooldownQ > 0 ? `Q:${(abilityCooldownQ / 60).toFixed(1)}s` : `Q:READY`;
+                        let eTxt = abilityCooldownE > 0 ? `E:${(abilityCooldownE / 60).toFixed(1)}s` : `E:READY`;
+                        txt = `[Slime] ${qTxt} | ${eTxt}`;
+                    }
+                    ctx.fillStyle = (abilityCooldownE > 0 && abilityCooldownQ > 0) ? '#ff3333' : '#00ffaa';
+                    ctx.fillText(txt, 370, 35);
+                } else if (equippedAbility === 'magnet' && magnetLevel > 0) {
+                    ctx.fillStyle = '#ff3366';
+                    ctx.fillText(`[PASSIVE] Magnet Active`, 370, 35);
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function renderBackgroundOnly() {
+            drawEnvironment();
+            player.draw();
+        }
+
+        // Initialize display
+        showHubMenu();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
