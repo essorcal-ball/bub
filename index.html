@@ -194,7 +194,6 @@
         .shop-card.magnet { border-color: #ff3366; }
         .shop-card.slime { border-color: #00ffaa; }
         .shop-card.medic { border-color: #ff3333; }
-        .shop-card.curses { border-color: #a855f7; }
 
         .shop-card.skin-default { border-color: #ffffff; }
         .shop-card.skin-green { border-color: #00ff66; }
@@ -237,6 +236,40 @@
             padding: 8px;
             font-size: 0.85rem;
         }
+
+        /* Curses Selection UI */
+        .curses-container {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            width: 90%;
+            justify-content: center;
+        }
+
+        .curse-card {
+            background: #11111a;
+            border: 2px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
+        }
+
+        .curse-card.easy { border-color: #00ff66; }
+        .curse-card.medium { border-color: #ffaa00; }
+        .curse-card.hard { border-color: #ff2222; }
+
+        .curse-card h3 { font-size: 1.2rem; margin-bottom: 8px; }
+        .curse-card.easy h3 { color: #00ff66; }
+        .curse-card.medium h3 { color: #ffaa00; }
+        .curse-card.hard h3 { color: #ff2222; }
+
+        .curse-card p { font-size: 0.85rem; color: #ddd; margin-bottom: 12px; }
 
         /* Admin Screen Elements */
         .admin-panel {
@@ -293,6 +326,35 @@
                 <button id="play-btn">Play</button>
                 <button id="shop-btn" class="gold">Shop</button>
             </div>
+        </div>
+
+        <!-- Gameplay Curses Selection Overlay -->
+        <div id="curse-select-screen" class="ui-screen hidden">
+            <h1 style="color: #a855f7; text-shadow: 0 0 15px #a855f7;">🔮 CHOOSE A CURSE</h1>
+            <p>Select a curse to apply for the next <b>500 score</b>, or opt out!</p>
+            
+            <div class="curses-container">
+                <!-- Option 1 -->
+                <div class="curse-card" id="curse-card-0">
+                    <h3 id="curse-title-0">Curse</h3>
+                    <p id="curse-desc-0">Description</p>
+                    <button id="curse-btn-0" class="gold">Choose</button>
+                </div>
+                <!-- Option 2 -->
+                <div class="curse-card" id="curse-card-1">
+                    <h3 id="curse-title-1">Curse</h3>
+                    <p id="curse-desc-1">Description</p>
+                    <button id="curse-btn-1" class="gold">Choose</button>
+                </div>
+                <!-- Option 3 -->
+                <div class="curse-card" id="curse-card-2">
+                    <h3 id="curse-title-2">Curse</h3>
+                    <p id="curse-desc-2">Description</p>
+                    <button id="curse-btn-2" class="gold">Choose</button>
+                </div>
+            </div>
+
+            <button id="opt-out-curse-btn" class="secondary" style="border: 1px solid #ffd700;">Opt Out (Costs 1 Coin)</button>
         </div>
 
         <!-- Shop Screen (Scrollable) -->
@@ -358,20 +420,6 @@
                         <div class="card-actions">
                             <button id="buy-medic-btn" class="gold">Buy Lvl 1 (18 Coins)</button>
                             <button id="equip-medic-btn" class="secondary">Equip</button>
-                        </div>
-                    </div>
-
-                    <!-- Curses Card -->
-                    <div class="shop-card curses">
-                        <div>
-                            <h3 style="color:#a855f7;">🔮 Curses</h3>
-                            <div id="curses-level-text" class="level-badge">Level: 0 / 2</div>
-                            <div id="curses-current-desc" class="desc-box">Current: Locked</div>
-                            <div id="curses-next-desc" class="desc-box">Next: Hex nearest obstacle to turn coins into 3x Dark Orbs.</div>
-                        </div>
-                        <div class="card-actions">
-                            <button id="buy-curses-btn" class="gold">Buy Lvl 1 (20 Coins)</button>
-                            <button id="equip-curses-btn" class="secondary">Equip</button>
                         </div>
                     </div>
                 </div>
@@ -526,6 +574,7 @@
         const gameoverScreen = document.getElementById('gameover-screen');
         const adminPassScreen = document.getElementById('admin-pass-screen');
         const adminPanelScreen = document.getElementById('admin-panel-screen');
+        const curseSelectScreen = document.getElementById('curse-select-screen');
         
         const hubHighscoreText = document.getElementById('hub-highscore');
         const hubCoinsText = document.getElementById('hub-coins');
@@ -564,12 +613,6 @@
         const buyMedicBtn = document.getElementById('buy-medic-btn');
         const equipMedicBtn = document.getElementById('equip-medic-btn');
 
-        const cursesLevelText = document.getElementById('curses-level-text');
-        const cursesCurrentDesc = document.getElementById('curses-current-desc');
-        const cursesNextDesc = document.getElementById('curses-next-desc');
-        const buyCursesBtn = document.getElementById('buy-curses-btn');
-        const equipCursesBtn = document.getElementById('equip-curses-btn');
-
         // Shop Skins UI
         const skinButtons = {
             'default': document.getElementById('equip-skin-default'),
@@ -594,6 +637,7 @@
         const shopBackBtn = document.getElementById('shop-back-btn');
         const retryBtn = document.getElementById('retry-btn');
         const menuBtn = document.getElementById('menu-btn');
+        const optOutCurseBtn = document.getElementById('opt-out-curse-btn');
 
         // Admin Controls
         const adminPassInput = document.getElementById('admin-pass-input');
@@ -619,7 +663,6 @@
         const GOLD_COIN = '#ffd700';
         const GRAY_GROUND = '#555555';
         const WHITE_STICKMAN = '#ffffff';
-        const PURPLE_CURSED = '#a855f7';
 
         // Saved Data (LocalStorage)
         let totalCoins = parseInt(localStorage.getItem('stickman_coins')) || 0;
@@ -628,7 +671,6 @@
         let magnetLevel = parseInt(localStorage.getItem('stickman_magnet_lvl')) || 0;
         let slimeLevel = parseInt(localStorage.getItem('stickman_slime_lvl')) || 0;
         let medicLevel = parseInt(localStorage.getItem('stickman_medic_lvl')) || 0;
-        let cursesLevel = parseInt(localStorage.getItem('stickman_curses_lvl')) || 0;
         let equippedAbility = localStorage.getItem('stickman_equipped') || 'none';
         let equippedSkin = localStorage.getItem('stickman_equipped_skin') || 'default';
 
@@ -639,6 +681,10 @@
         let obstacles = [];
         let coins = [];
         let particles = [];
+        let flameParticles = [];
+        let greenMistParticles = [];
+        let lightningEffectTimer = 0;
+
         let spawnTimer = 0;
         let coinSpawnTimer = 0;
         let nextSpawnInterval = 100;
@@ -653,9 +699,6 @@
         let hackerCharges = 0;
         let isMagnetActive = false;
 
-        // Curses Ability State
-        let curseAuraTimer = 0;
-
         // Medic Ability State
         let hasRevivedThisRun = false;
         let medicLives = 0;
@@ -665,6 +708,26 @@
         let slimeBlob = null;
         let slimeFloorPuddles = [];
 
+        // CURSE SYSTEM VARIABLES
+        let nextCurseScoreTrigger = 800;
+        let activeCurse = null; // { type, name, id, endScore, reward }
+        let currentCurseOptions = [];
+
+        const CURSE_LIST = [
+            // EASY CURSES (Reward 0)
+            { id: 'e_coin_rate', tier: 'easy', reward: 0, name: 'Low Coin Rate', desc: 'Coins spawn at a way less rate.' },
+            { id: 'e_shrink_score', tier: 'easy', reward: 0, name: 'Score Shrink', desc: 'Instantly shrinks score by 50 to 1,000 points!' },
+            
+            // MEDIUM CURSES (Reward 2)
+            { id: 'm_traps', tier: 'medium', reward: 2, name: 'Ground Traps', desc: 'Hidden traps blend in with ground and snap up!' },
+            { id: 'm_cooldown', tier: 'medium', reward: 2, name: 'Sluggish Cooldown', desc: '50% longer cooldown for abilities.' },
+            { id: 'm_huge_obs', tier: 'medium', reward: 2, name: 'Giant Obstacles', desc: 'All ground obstacles are way bigger than usual!' },
+            { id: 'm_no_coins', tier: 'medium', reward: 2, name: 'No Pickups', desc: 'Coins and hearts will not spawn at all.' },
+
+            // HARD CURSES (Reward 5)
+            { id: 'h_no_abilities', tier: 'hard', reward: 5, name: 'Ability Block', desc: 'Your abilities are completely disabled!' }
+        ];
+
         // Save progress function
         function saveGameData() {
             localStorage.setItem('stickman_coins', totalCoins);
@@ -673,7 +736,6 @@
             localStorage.setItem('stickman_magnet_lvl', magnetLevel);
             localStorage.setItem('stickman_slime_lvl', slimeLevel);
             localStorage.setItem('stickman_medic_lvl', medicLevel);
-            localStorage.setItem('stickman_curses_lvl', cursesLevel);
             localStorage.setItem('stickman_equipped', equippedAbility);
             localStorage.setItem('stickman_equipped_skin', equippedSkin);
         }
@@ -732,12 +794,11 @@
                 if (equippedSkin === 'green') skinColor = '#00ff66';
                 else if (equippedSkin === 'pirate') skinColor = '#ffaa00';
                 else if (equippedSkin === 'robot') skinColor = '#00ccff';
-                else if (equippedSkin === 'alien') skinColor = '#00ff66'; // Green Alien
+                else if (equippedSkin === 'alien') skinColor = '#00ff66';
                 else if (equippedSkin === 'gold') skinColor = '#ffd700';
 
                 let strokeWidth = 3;
 
-                // Hacker Level 3 override
                 if (hackerLvl3Timer > 0) {
                     skinColor = '#b000ff';
                     strokeWidth = Math.random() < 0.3 ? 5 : 3;
@@ -749,11 +810,8 @@
 
                 let offsetX = (hackerLvl3Timer > 0 && Math.random() < 0.4) ? (Math.random() * 6 - 3) : 0;
 
-                // --- ALIEN / GOLD / CURSES AURA EFFECT ---
-                if (curseAuraTimer > 0) {
-                    ctx.shadowColor = '#a855f7';
-                    ctx.shadowBlur = 16;
-                } else if (equippedSkin === 'alien') {
+                // --- ALIEN / GOLD AURA EFFECT ---
+                if (equippedSkin === 'alien') {
                     ctx.shadowColor = '#00ff66';
                     ctx.shadowBlur = 12;
                 } else if (equippedSkin === 'gold') {
@@ -781,14 +839,12 @@
                     ctx.fillStyle = '#00ffff';
                     ctx.fillRect(this.x - 8 + offsetX, headY - 5, 16, 5);
                 } else if (equippedSkin === 'alien') {
-                    // Green Alien Head
                     ctx.fillStyle = '#032e12';
                     ctx.beginPath();
                     ctx.ellipse(this.x + offsetX, headY, 14, 18, 0, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.stroke();
 
-                    // Alien Black Oval Eyes
                     ctx.fillStyle = '#000000';
                     ctx.beginPath();
                     ctx.ellipse(this.x - 5 + offsetX, headY - 2, 4, 7, -Math.PI / 6, 0, Math.PI * 2);
@@ -826,13 +882,11 @@
 
                 // --- DRAW BODY & LIMBS ---
                 if (medicReviveTimer > 0) {
-                    // MEDIC REVIVE POSE: Holding Medkit!
                     ctx.beginPath();
                     ctx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
                     ctx.lineTo(this.x + offsetX, this.y - 15);
                     ctx.stroke();
 
-                    // Standing Legs
                     ctx.beginPath();
                     ctx.moveTo(this.x + offsetX, this.y - 15);
                     ctx.lineTo(this.x - 8 + offsetX, this.y);
@@ -840,35 +894,29 @@
                     ctx.lineTo(this.x + 8 + offsetX, this.y);
                     ctx.stroke();
 
-                    // Left Arm Resting
                     ctx.beginPath();
                     ctx.moveTo(this.x + offsetX, headY + this.radius + 8);
                     ctx.lineTo(this.x - 10 + offsetX, headY + this.radius + 22);
                     ctx.stroke();
 
-                    // Right Arm Extended forward carrying Medkit
                     ctx.beginPath();
                     ctx.moveTo(this.x + offsetX, headY + this.radius + 8);
                     ctx.lineTo(this.x + 18 + offsetX, headY + this.radius + 8);
                     ctx.stroke();
 
-                    // --- DRAW MEDKIT IN HAND ---
                     const kitX = this.x + 18 + offsetX;
                     const kitY = headY + this.radius - 2;
 
-                    // Box Body
                     ctx.fillStyle = '#ff2222';
                     ctx.fillRect(kitX, kitY, 20, 16);
                     ctx.strokeStyle = '#ffffff';
                     ctx.lineWidth = 1;
                     ctx.strokeRect(kitX, kitY, 20, 16);
 
-                    // Green/White Cross
                     ctx.fillStyle = '#ffffff';
                     ctx.fillRect(kitX + 8, kitY + 3, 4, 10);
                     ctx.fillRect(kitX + 5, kitY + 6, 10, 4);
 
-                    // Handle
                     ctx.strokeStyle = '#ffffff';
                     ctx.lineWidth = 1.5;
                     ctx.beginPath();
@@ -952,14 +1000,21 @@
         };
 
         // Ability Logic triggers
+        function getCooldownMultiplier() {
+            return (activeCurse && activeCurse.id === 'm_cooldown') ? 1.5 : 1.0;
+        }
+
         function triggerAbilityE() {
             if (gameState !== 'PLAYING') return;
+            if (activeCurse && activeCurse.id === 'h_no_abilities') return; // HARD CURSE BLOCK
+
+            const cdMult = getCooldownMultiplier();
 
             if (equippedAbility === 'hacker' && hackerLevel > 0 && abilityCooldownE <= 0) {
                 if (hackerLevel === 1) {
                     let nearest = getUpcomingObstacles(1);
                     nearest.forEach(obs => obs.hacked = true);
-                    abilityCooldownE = 6.5 * 60;
+                    abilityCooldownE = 6.5 * 60 * cdMult;
                 } else if (hackerLevel === 2) {
                     hackerCharges = 3;
                     let nearest = getUpcomingObstacles(3);
@@ -969,10 +1024,10 @@
                             hackerCharges--;
                         }
                     });
-                    abilityCooldownE = 15.0 * 60;
+                    abilityCooldownE = 15.0 * 60 * cdMult;
                 } else if (hackerLevel === 3) {
                     hackerLvl3Timer = 9.0 * 60;
-                    abilityCooldownE = 23.0 * 60;
+                    abilityCooldownE = 23.0 * 60 * cdMult;
                 }
             }
 
@@ -980,7 +1035,7 @@
                 if (slimeLevel === 1) {
                     throwSlimePuddle();
                     gameSpeed = Math.max(3.5, gameSpeed * 0.6);
-                    abilityCooldownE = 20.0 * 60;
+                    abilityCooldownE = 20.0 * 60 * cdMult;
                 } else if (slimeLevel === 2) {
                     slimeBlob = {
                         x: player.x + 20,
@@ -988,40 +1043,21 @@
                         targetObstaclesRemaining: 5,
                         state: 'RUNNING'
                     };
-                    abilityCooldownE = 20.0 * 60;
-                }
-            }
-
-            if (equippedAbility === 'curses' && cursesLevel > 0 && abilityCooldownE <= 0) {
-                let count = cursesLevel === 1 ? 1 : 2;
-                let targets = getUpcomingObstacles(count);
-                if (targets.length > 0) {
-                    targets.forEach(obs => {
-                        obs.cursed = true;
-                        for (let k = 0; k < 15; k++) {
-                            particles.push({
-                                x: obs.x + obs.width / 2,
-                                y: obs.y + obs.height / 2,
-                                vx: (Math.random() - 0.5) * 6,
-                                vy: (Math.random() - 0.5) * 6,
-                                life: 30,
-                                color: '#a855f7'
-                            });
-                        }
-                    });
-                    curseAuraTimer = 30;
-                    abilityCooldownE = (cursesLevel === 1 ? 12 : 10) * 60;
+                    abilityCooldownE = 20.0 * 60 * cdMult;
                 }
             }
         }
 
         function triggerAbilityQ() {
             if (gameState !== 'PLAYING') return;
+            if (activeCurse && activeCurse.id === 'h_no_abilities') return; // HARD CURSE BLOCK
+
+            const cdMult = getCooldownMultiplier();
 
             if (equippedAbility === 'slime' && slimeLevel === 2 && abilityCooldownQ <= 0) {
                 throwSlimePuddle();
                 gameSpeed = Math.max(3.5, gameSpeed * 0.6);
-                abilityCooldownQ = 18.0 * 60;
+                abilityCooldownQ = 18.0 * 60 * cdMult;
             }
         }
 
@@ -1035,7 +1071,7 @@
 
         function getUpcomingObstacles(count) {
             return obstacles
-                .filter(obs => obs.x + obs.width > player.x && !obs.hacked && !obs.cursed)
+                .filter(obs => obs.x + obs.width > player.x && !obs.hacked)
                 .sort((a, b) => a.x - b.x)
                 .slice(0, count);
         }
@@ -1088,13 +1124,11 @@
         buyMagnetBtn.addEventListener('click', () => purchaseAbility('magnet'));
         buySlimeBtn.addEventListener('click', () => purchaseAbility('slime'));
         buyMedicBtn.addEventListener('click', () => purchaseAbility('medic'));
-        buyCursesBtn.addEventListener('click', () => purchaseAbility('curses'));
 
         equipHackerBtn.addEventListener('click', () => equipAbility('hacker'));
         equipMagnetBtn.addEventListener('click', () => equipAbility('magnet'));
         equipSlimeBtn.addEventListener('click', () => equipAbility('slime'));
         equipMedicBtn.addEventListener('click', () => equipAbility('medic'));
-        equipCursesBtn.addEventListener('click', () => equipAbility('curses'));
 
         // Skin Equip Listeners
         skinButtons['default'].addEventListener('click', () => equipSkin('default'));
@@ -1103,6 +1137,21 @@
         skinButtons['robot'].addEventListener('click', () => equipSkin('robot'));
         skinButtons['alien'].addEventListener('click', () => equipSkin('alien'));
         skinButtons['gold'].addEventListener('click', () => equipSkin('gold'));
+
+        // Curses Overlay listeners
+        for (let i = 0; i < 3; i++) {
+            document.getElementById(`curse-btn-${i}`).addEventListener('click', () => selectCurseOption(i));
+        }
+
+        optOutCurseBtn.addEventListener('click', () => {
+            if (totalCoins >= 1) {
+                totalCoins -= 1;
+                saveGameData();
+                resumeGameFromCurse(null);
+            } else {
+                alert("You need at least 1 Coin to Opt Out!");
+            }
+        });
 
         // Admin Listeners
         adminLoginBtn.addEventListener('click', submitAdminPass);
@@ -1138,7 +1187,6 @@
             magnetLevel = 0;
             slimeLevel = 0;
             medicLevel = 0;
-            cursesLevel = 0;
             equippedAbility = 'none';
             equippedSkin = 'default';
             saveGameData();
@@ -1273,28 +1321,6 @@
             equipMedicBtn.textContent = equippedAbility === 'medic' ? 'EQUIPPED' : 'Equip';
             equipMedicBtn.className = equippedAbility === 'medic' ? 'equipped' : 'secondary';
 
-            // --- CURSES ---
-            cursesLevelText.textContent = `Level: ${cursesLevel} / 2`;
-            if (cursesLevel === 0) {
-                cursesCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
-                cursesNextDesc.innerHTML = `<b>Lvl 1:</b> Hex nearest obstacle! It shatters into 3x Dark Orbs. (CD: 12s)`;
-                buyCursesBtn.textContent = `Buy Lvl 1 (20 Coins)`;
-                buyCursesBtn.disabled = totalCoins < 20;
-            } else if (cursesLevel === 1) {
-                cursesCurrentDesc.innerHTML = `<b>Lvl 1:</b> Hex nearest obstacle to burst into 3x Dark Orbs. (CD: 12s)`;
-                cursesNextDesc.innerHTML = `<b>Lvl 2:</b> Hex 2 obstacles at once & lower CD to 10s!`;
-                buyCursesBtn.textContent = `Upgrade Lvl 2 (50 Coins)`;
-                buyCursesBtn.disabled = totalCoins < 50;
-            } else {
-                cursesCurrentDesc.innerHTML = `<b>Lvl 2 MAX:</b> Hex 2 obstacles into 3x Dark Orbs! (CD: 10s)`;
-                cursesNextDesc.innerHTML = `<b>Next:</b> MAX LEVEL`;
-                buyCursesBtn.textContent = `MAXED`;
-                buyCursesBtn.disabled = true;
-            }
-            equipCursesBtn.disabled = cursesLevel === 0;
-            equipCursesBtn.textContent = equippedAbility === 'curses' ? 'EQUIPPED' : 'Equip';
-            equipCursesBtn.className = equippedAbility === 'curses' ? 'equipped' : 'secondary';
-
             // --- SKINS UI ---
             const skinRequirements = {
                 'green': 1000,
@@ -1345,9 +1371,6 @@
             } else if (ability === 'medic') {
                 if (medicLevel === 0 && totalCoins >= 18) { totalCoins -= 18; medicLevel = 1; equippedAbility = 'medic'; }
                 else if (medicLevel === 1 && totalCoins >= 60) { totalCoins -= 60; medicLevel = 2; }
-            } else if (ability === 'curses') {
-                if (cursesLevel === 0 && totalCoins >= 20) { totalCoins -= 20; cursesLevel = 1; equippedAbility = 'curses'; }
-                else if (cursesLevel === 1 && totalCoins >= 50) { totalCoins -= 50; cursesLevel = 2; }
             }
             saveGameData();
             updateShopUI();
@@ -1367,6 +1390,101 @@
             equippedSkin = skinKey;
             saveGameData();
             updateShopUI();
+        }
+
+        // --- CURSE SYSTEM SELECTION LOGIC ---
+        function triggerCurseSelectionScreen() {
+            gameState = 'PAUSED_CURSE';
+
+            // Clear Screen of all obstacles & active items
+            obstacles = [];
+            coins = [];
+
+            // Randomly select 3 curses from list
+            currentCurseOptions = [];
+            let pool = [...CURSE_LIST];
+            for (let i = 0; i < 3; i++) {
+                let idx = Math.floor(Math.random() * pool.length);
+                currentCurseOptions.push(pool[idx]);
+            }
+
+            // Populate Cards
+            for (let i = 0; i < 3; i++) {
+                let curse = currentCurseOptions[i];
+                let card = document.getElementById(`curse-card-${i}`);
+                let title = document.getElementById(`curse-title-${i}`);
+                let desc = document.getElementById(`curse-desc-${i}`);
+                let btn = document.getElementById(`curse-btn-${i}`);
+
+                card.className = `curse-card ${curse.tier}`;
+                title.textContent = `[${curse.tier.toUpperCase()}] ${curse.name}`;
+                desc.textContent = `${curse.desc} (Reward: ${curse.reward} Coins)`;
+                btn.textContent = `Accept Curse (+${curse.reward} Coins)`;
+            }
+
+            optOutCurseBtn.disabled = totalCoins < 1;
+            optOutCurseBtn.textContent = `Opt Out (Costs 1 Coin) [You have ${totalCoins} Coins]`;
+
+            curseSelectScreen.classList.remove('hidden');
+        }
+
+        function selectCurseOption(index) {
+            let chosen = currentCurseOptions[index];
+            totalCoins += chosen.reward;
+            
+            activeCurse = {
+                id: chosen.id,
+                tier: chosen.tier,
+                name: chosen.name,
+                endScore: score + 500
+            };
+
+            // Instant curse effect for easy shrink score
+            if (chosen.id === 'e_shrink_score') {
+                let shrinkAmount = Math.floor(Math.random() * 951) + 50; // 50 to 1000
+                score = Math.max(0, score - shrinkAmount);
+            }
+
+            // Spawn visual FX based on Tier
+            if (chosen.tier === 'easy') {
+                // Green Mist Effect around Player
+                for (let k = 0; k < 45; k++) {
+                    greenMistParticles.push({
+                        x: player.x + (Math.random() * 50 - 25),
+                        y: player.y - 25 + (Math.random() * 50 - 25),
+                        vx: (Math.random() - 0.5) * 1.5,
+                        vy: -Math.random() * 2 - 0.5,
+                        radius: Math.random() * 8 + 6,
+                        life: 120,
+                        alpha: 0.6
+                    });
+                }
+            } else if (chosen.tier === 'medium') {
+                // Flames Effect in front of Player
+                for (let k = 0; k < 60; k++) {
+                    flameParticles.push({
+                        x: player.x + 40 + (Math.random() * 20 - 10),
+                        y: GROUND_Y - (Math.random() * 15),
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: -Math.random() * 4 - 2,
+                        size: Math.random() * 10 + 8,
+                        life: 60,
+                        maxLife: 60
+                    });
+                }
+            } else if (chosen.tier === 'hard') {
+                // Big Red Lightning Strike right in front
+                lightningEffectTimer = 40;
+            }
+
+            saveGameData();
+            resumeGameFromCurse(activeCurse);
+        }
+
+        function resumeGameFromCurse(curse) {
+            curseSelectScreen.classList.add('hidden');
+            gameState = 'PLAYING';
+            spawnPausedTimer = 60; // Brief delay before obstacles resume
         }
 
         // Navigation Functions
@@ -1390,6 +1508,7 @@
             gameoverScreen.classList.add('hidden');
             adminPassScreen.classList.add('hidden');
             adminPanelScreen.classList.add('hidden');
+            curseSelectScreen.classList.add('hidden');
             resetGameValues();
             renderBackgroundOnly();
         }
@@ -1402,6 +1521,7 @@
             gameoverScreen.classList.add('hidden');
             adminPassScreen.classList.add('hidden');
             adminPanelScreen.classList.add('hidden');
+            curseSelectScreen.classList.add('hidden');
         }
 
         function startGame() {
@@ -1412,19 +1532,17 @@
             gameoverScreen.classList.add('hidden');
             adminPassScreen.classList.add('hidden');
             adminPanelScreen.classList.add('hidden');
+            curseSelectScreen.classList.add('hidden');
         }
 
         function triggerGameOver() {
-            // CHECK MEDIC REVIVE PERKS
             if (equippedAbility === 'medic' && medicLevel > 0) {
-                // Priority 1: Extra Lives from Hearts (Level 2 feature)
                 if (medicLives > 0) {
                     medicLives--;
                     triggerMedicReviveAnimation();
                     return;
                 }
 
-                // Priority 2: Free Passive Revive (Once per run)
                 if (!hasRevivedThisRun) {
                     hasRevivedThisRun = true;
                     triggerMedicReviveAnimation();
@@ -1432,7 +1550,6 @@
                 }
             }
 
-            // Normal Game Over sequence
             gameState = 'GAMEOVER';
             const currentScore = Math.floor(score);
 
@@ -1449,11 +1566,10 @@
         }
 
         function triggerMedicReviveAnimation() {
-            obstacles = []; // Wipe out screen obstacles instantly
-            spawnPausedTimer = 140; // Brief grace period pause
-            medicReviveTimer = 110; // ~1.8 second animation duration
+            obstacles = []; 
+            spawnPausedTimer = 140; 
+            medicReviveTimer = 110; 
 
-            // Create Green & Red Healing Sparkles
             for (let i = 0; i < 30; i++) {
                 particles.push({
                     x: player.x,
@@ -1472,6 +1588,10 @@
             obstacles = [];
             coins = [];
             particles = [];
+            flameParticles = [];
+            greenMistParticles = [];
+            lightningEffectTimer = 0;
+
             slimeFloorPuddles = [];
             slimeBlob = null;
             spawnTimer = 0;
@@ -1487,11 +1607,13 @@
             lagAnimationTimer = 0;
             hackerCharges = 0;
             isMagnetActive = false;
-            curseAuraTimer = 0;
 
             hasRevivedThisRun = false;
             medicLives = 0;
             medicReviveTimer = 0;
+
+            activeCurse = null;
+            nextCurseScoreTrigger = 800;
 
             player.reset();
         }
@@ -1499,9 +1621,29 @@
         function spawnObstacle() {
             if (spawnPausedTimer > 0 || medicReviveTimer > 0) return;
 
+            // MEDIUM CURSE: Hidden Ground Traps spawn
+            if (activeCurse && activeCurse.id === 'm_traps' && Math.random() < 0.35) {
+                obstacles.push({
+                    x: canvas.width,
+                    y: GROUND_Y - 8,
+                    width: 38,
+                    height: 8,
+                    isTrap: true,
+                    isSnapped: false,
+                    hacked: false,
+                    isFlying: false
+                });
+                return;
+            }
+
             const allowFlying = score >= 120;
             const isFlying = allowFlying && Math.random() < 0.4;
-            const sizeScale = Math.min(1.4, 1 + score / 1200);
+            let sizeScale = Math.min(1.4, 1 + score / 1200);
+
+            // MEDIUM CURSE: Giant Obstacles
+            if (activeCurse && activeCurse.id === 'm_huge_obs') {
+                sizeScale *= 1.7;
+            }
 
             let isHacked = false;
             if (hackerCharges > 0) {
@@ -1510,7 +1652,7 @@
             }
 
             if (isFlying) {
-                const width = Math.floor((Math.random() * 30 + 40) * sizeScale);
+                const width = Math.floor((Math.random() * 30 + 40) * (sizeScale > 1.4 ? 1.4 : sizeScale));
                 const isTallAir = Math.random() < 0.5;
                 let y, height;
 
@@ -1522,15 +1664,15 @@
                     height = 25;
                 }
 
-                obstacles.push({ x: canvas.width, y, width, height, hacked: isHacked, cursed: false, isFlying: true });
+                obstacles.push({ x: canvas.width, y, width, height, hacked: isHacked, isFlying: true, isTrap: false });
             } else {
-                const width = Math.min(110, Math.floor((Math.random() * 70 + 30) * sizeScale));
+                const width = Math.min(130, Math.floor((Math.random() * 70 + 30) * sizeScale));
                 
                 let height;
                 if (width > 75) {
                     height = Math.floor((Math.random() * 12 + 22) * sizeScale);
                 } else {
-                    height = Math.min(52, Math.floor((Math.random() * 35 + 25) * sizeScale));
+                    height = Math.min(75, Math.floor((Math.random() * 35 + 25) * sizeScale));
                 }
 
                 obstacles.push({
@@ -1539,17 +1681,19 @@
                     width,
                     height,
                     hacked: isHacked,
-                    cursed: false,
-                    isFlying: false
+                    isFlying: false,
+                    isTrap: false
                 });
             }
         }
 
         function spawnCoin() {
+            // MEDIUM CURSE: No Coins/Hearts spawn
+            if (activeCurse && activeCurse.id === 'm_no_coins') return;
+
             const isAirCoin = Math.random() < 0.6; 
             const y = isAirCoin ? GROUND_Y - Math.floor(Math.random() * 50 + 60) : GROUND_Y - 20;
 
-            // MEDIC LEVEL 2: 5% Chance of Heart Spawn
             if (equippedAbility === 'medic' && medicLevel === 2 && Math.random() < 0.05) {
                 coins.push({
                     x: canvas.width,
@@ -1557,13 +1701,11 @@
                     radius: 12,
                     isHeart: true,
                     isBag: false,
-                    isOrb: false,
                     value: 0
                 });
                 return;
             }
 
-            // MAGNET LEVEL 2: 5% Chance of Money Bag
             const isMoneyBag = (equippedAbility === 'magnet' && magnetLevel === 2 && Math.random() < 0.05);
 
             coins.push({
@@ -1572,13 +1714,12 @@
                 radius: isMoneyBag ? 14 : 10,
                 isHeart: false,
                 isBag: isMoneyBag,
-                isOrb: false,
                 value: isMoneyBag ? 5 : 1
             });
         }
 
         function checkCollision(player, obs) {
-            if (obs.hacked || obs.cursed || hackerLvl3Timer > 0 || medicReviveTimer > 0) return false;
+            if (obs.hacked || hackerLvl3Timer > 0 || medicReviveTimer > 0) return false;
 
             const playerLeft = player.x - 8;
             const playerRight = player.x + 8;
@@ -1639,10 +1780,21 @@
                     score += gameSpeed * 0.05;
                 }
 
+                // --- CURSE SCORE CHECKING ---
+                if (activeCurse && score >= activeCurse.endScore) {
+                    activeCurse = null; // Curse expired!
+                }
+
+                if (!activeCurse && score >= nextCurseScoreTrigger) {
+                    nextCurseScoreTrigger += 800;
+                    triggerCurseSelectionScreen();
+                    requestAnimationFrame(gameLoop);
+                    return;
+                }
+
                 if (abilityCooldownE > 0) abilityCooldownE--;
                 if (abilityCooldownQ > 0) abilityCooldownQ--;
                 if (spawnPausedTimer > 0) spawnPausedTimer--;
-                if (curseAuraTimer > 0) curseAuraTimer--;
 
                 if (hackerLvl3Timer > 0) {
                     hackerLvl3Timer--;
@@ -1655,6 +1807,62 @@
 
                 player.update();
                 player.draw();
+
+                // --- RENDER EASY CURSE VISUAL: GREEN MIST ---
+                for (let i = greenMistParticles.length - 1; i >= 0; i--) {
+                    let p = greenMistParticles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                    p.alpha = Math.max(0, p.life / 120 * 0.5);
+
+                    ctx.fillStyle = `rgba(0, 255, 100, ${p.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (p.life <= 0) greenMistParticles.splice(i, 1);
+                }
+
+                // --- RENDER MEDIUM CURSE VISUAL: REALISTIC FLAMES ---
+                for (let i = flameParticles.length - 1; i >= 0; i--) {
+                    let fp = flameParticles[i];
+                    fp.x += fp.vx;
+                    fp.y += fp.vy;
+                    fp.life--;
+                    
+                    let progress = fp.life / fp.maxLife;
+                    let red = 255;
+                    let green = Math.floor(255 * progress);
+                    let blue = 0;
+                    let alpha = Math.max(0, progress);
+
+                    ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(fp.x, fp.y, fp.size * progress, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (fp.life <= 0) flameParticles.splice(i, 1);
+                }
+
+                // --- RENDER HARD CURSE VISUAL: RED LIGHTNING STRIKE ---
+                if (lightningEffectTimer > 0) {
+                    lightningEffectTimer--;
+                    const lx = player.x + 60;
+                    ctx.strokeStyle = '#ff1133';
+                    ctx.lineWidth = Math.random() * 6 + 4;
+                    ctx.shadowColor = '#ff0033';
+                    ctx.shadowBlur = 20;
+
+                    ctx.beginPath();
+                    ctx.moveTo(lx, 0);
+                    ctx.lineTo(lx + (Math.random() * 30 - 15), 100);
+                    ctx.lineTo(lx + (Math.random() * 30 - 15), 200);
+                    ctx.lineTo(lx + (Math.random() * 30 - 15), GROUND_Y);
+                    ctx.stroke();
+
+                    ctx.shadowBlur = 0;
+                }
 
                 // --- Handle Medic Revive Banner Animation ---
                 if (medicReviveTimer > 0) {
@@ -1736,7 +1944,7 @@
                     if (pt.life <= 0) particles.splice(i, 1);
                 }
 
-                // --- Handle Obstacles ---
+                // --- Handle Obstacles & Traps ---
                 spawnTimer++;
                 if (spawnTimer >= nextSpawnInterval) {
                     spawnObstacle();
@@ -1748,40 +1956,38 @@
                     const obs = obstacles[i];
                     if (medicReviveTimer <= 0) obs.x -= gameSpeed;
 
-                    if (obs.cursed) {
-                        // Shatter Cursed obstacle into 3 Dark Orbs
-                        for (let k = 0; k < 3; k++) {
-                            coins.push({
-                                x: obs.x + obs.width / 2 + (k - 1) * 22,
-                                y: obs.y + obs.height / 2 + (Math.random() * 20 - 10),
-                                radius: 10,
-                                isHeart: false,
-                                isBag: false,
-                                isOrb: true,
-                                value: 2
-                            });
+                    // TRAP OBSTACLE BEHAVIOR
+                    if (obs.isTrap) {
+                        // Snap trap upward when player gets close
+                        if (!obs.isSnapped && Math.abs((player.x) - (obs.x + obs.width / 2)) < 60) {
+                            obs.isSnapped = true;
+                            obs.height = 36;
+                            obs.y = GROUND_Y - 36;
                         }
-                        for (let k = 0; k < 15; k++) {
-                            particles.push({
-                                x: obs.x + obs.width / 2,
-                                y: obs.y + obs.height / 2,
-                                vx: (Math.random() - 0.5) * 8,
-                                vy: (Math.random() - 0.5) * 8,
-                                life: 25,
-                                color: '#a855f7'
-                            });
+
+                        ctx.fillStyle = obs.isSnapped ? '#ff2222' : '#5f5f5f'; // Blends with ground until close!
+                        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+                        // Draw Spikes / Jaw teeth
+                        if (obs.isSnapped) {
+                            ctx.fillStyle = '#ffffff';
+                            for (let t = 0; t < obs.width; t += 8) {
+                                ctx.beginPath();
+                                ctx.moveTo(obs.x + t, obs.y);
+                                ctx.lineTo(obs.x + t + 4, obs.y - 8);
+                                ctx.lineTo(obs.x + t + 8, obs.y);
+                                ctx.fill();
+                            }
                         }
-                        obstacles.splice(i, 1);
-                        continue;
-                    }
+                    } else {
+                        ctx.fillStyle = obs.hacked ? GREEN_HACKED : RED_OBSTACLE;
+                        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
 
-                    ctx.fillStyle = obs.hacked ? GREEN_HACKED : RED_OBSTACLE;
-                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-
-                    if (obs.hacked) {
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 1.5;
-                        ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+                        if (obs.hacked) {
+                            ctx.strokeStyle = '#ffffff';
+                            ctx.lineWidth = 1.5;
+                            ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+                        }
                     }
 
                     if (checkCollision(player, obs)) {
@@ -1793,9 +1999,14 @@
                     }
                 }
 
-                // --- Handle Coins / Hearts / Money Bags / Dark Orbs ---
+                // --- Handle Coins / Hearts / Money Bags ---
                 coinSpawnTimer++;
-                if (coinSpawnTimer >= nextCoinInterval) {
+                let currentCoinInterval = nextCoinInterval;
+                if (activeCurse && activeCurse.id === 'e_coin_rate') {
+                    currentCoinInterval *= 3; // Easy Curse: Way less coin rate
+                }
+
+                if (coinSpawnTimer >= currentCoinInterval) {
                     spawnCoin();
                     coinSpawnTimer = 0;
                     nextCoinInterval = Math.floor(Math.random() * 200 + 300);
@@ -1820,7 +2031,6 @@
                         }
                     }
 
-                    // Render Hearts / Money Bags / Dark Orbs / Standard Coins
                     if (coin.isHeart) {
                         ctx.fillStyle = '#ff1144';
                         ctx.beginPath();
@@ -1832,16 +2042,6 @@
 
                         ctx.shadowColor = '#ff0044';
                         ctx.shadowBlur = 8;
-                    } else if (coin.isOrb) {
-                        ctx.fillStyle = PURPLE_CURSED;
-                        ctx.shadowColor = PURPLE_CURSED;
-                        ctx.shadowBlur = 10;
-                        ctx.beginPath();
-                        ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 1.5;
-                        ctx.stroke();
                     } else if (coin.isBag) {
                         ctx.fillStyle = '#8b4513';
                         ctx.beginPath();
@@ -1910,9 +2110,24 @@
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}x`, 680, 35);
 
+                // ACTIVE CURSE HUD INDICATOR
+                if (activeCurse) {
+                    let curseColor = '#00ff66';
+                    if (activeCurse.tier === 'medium') curseColor = '#ffaa00';
+                    if (activeCurse.tier === 'hard') curseColor = '#ff2222';
+
+                    let remainingScore = Math.max(0, Math.floor(activeCurse.endScore - score));
+                    ctx.fillStyle = curseColor;
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.fillText(`🔮 CURSE: ${activeCurse.name} (${remainingScore} left)`, 20, 60);
+                }
+
                 // Ability Cooldown / Status HUD Indicators
                 ctx.font = 'bold 14px sans-serif';
-                if (equippedAbility === 'hacker' && hackerLevel > 0) {
+                if (activeCurse && activeCurse.id === 'h_no_abilities') {
+                    ctx.fillStyle = '#ff2222';
+                    ctx.fillText(`[ABILITIES BLOCKED BY CURSE]`, 370, 35);
+                } else if (equippedAbility === 'hacker' && hackerLevel > 0) {
                     if (hackerLvl3Timer > 0) {
                         ctx.fillStyle = '#b000ff';
                         ctx.fillText(`HACK ACTIVE: ${(hackerLvl3Timer / 60).toFixed(1)}s`, 370, 35);
@@ -1942,14 +2157,6 @@
                     let revStatus = (!hasRevivedThisRun) ? 'READY' : 'USED';
                     let lifeTxt = medicLevel === 2 ? ` | Lives: ❤️ x${medicLives}` : '';
                     ctx.fillText(`[PASSIVE] Revive: ${revStatus}${lifeTxt}`, 360, 35);
-                } else if (equippedAbility === 'curses' && cursesLevel > 0) {
-                    if (abilityCooldownE > 0) {
-                        ctx.fillStyle = '#ff3333';
-                        ctx.fillText(`[E] Curse: ${(abilityCooldownE / 60).toFixed(1)}s`, 370, 35);
-                    } else {
-                        ctx.fillStyle = '#a855f7';
-                        ctx.fillText(`[E] Curses READY!`, 370, 35);
-                    }
                 }
             }
 
