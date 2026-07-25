@@ -62,7 +62,7 @@
         }
 
         h1 {
-            font-size: 3rem;
+            font-size: 2.8rem;
             margin-bottom: 5px;
             color: #ffffff;
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
@@ -76,7 +76,7 @@
         }
 
         p {
-            font-size: 1.1rem;
+            font-size: 1rem;
             margin-bottom: 6px;
             color: #aaaaaa;
         }
@@ -88,8 +88,8 @@
         }
 
         button {
-            padding: 12px 28px;
-            font-size: 1.1rem;
+            padding: 10px 24px;
+            font-size: 1rem;
             font-weight: bold;
             color: #000000;
             background: #ffffff;
@@ -103,6 +103,13 @@
             background: #e0e0e0;
             transform: scale(1.05);
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
         }
 
         button.secondary {
@@ -125,6 +132,11 @@
             box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         }
 
+        button.equipped {
+            background: #00ff66 !important;
+            color: #000 !important;
+        }
+
         button.danger {
             background: #ff2222;
             color: #ffffff;
@@ -135,53 +147,76 @@
             box-shadow: 0 0 10px rgba(255, 34, 34, 0.5);
         }
 
-        /* Shop Layout */
+        /* Shop Scrollable Layout */
+        .shop-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
         .shop-container {
             display: flex;
-            gap: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
             margin: 15px 0;
-            width: 90%;
+            width: 100%;
             justify-content: center;
         }
 
         .shop-card {
             background: #11111d;
-            border: 2px solid #00ff66;
+            border: 2px solid #333355;
             border-radius: 8px;
-            padding: 15px;
-            width: 320px;
-            box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
+            padding: 12px;
+            width: 230px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
             text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
+        .shop-card.hacker { border-color: #00ff66; }
+        .shop-card.magnet { border-color: #ff3366; }
+        .shop-card.slime { border-color: #00ffaa; }
+
         .shop-card h3 {
-            color: #00ff66;
-            font-size: 1.4rem;
-            margin-bottom: 5px;
+            font-size: 1.2rem;
+            margin-bottom: 4px;
         }
 
         .shop-card .level-badge {
             color: #888888;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
         }
 
         .shop-card .desc-box {
             background: #08080e;
             border: 1px solid #222233;
-            padding: 8px 10px;
+            padding: 6px 8px;
             border-radius: 5px;
-            font-size: 0.85rem;
-            line-height: 1.3;
-            margin-bottom: 8px;
+            font-size: 0.8rem;
+            line-height: 1.25;
+            margin-bottom: 6px;
             color: #dddddd;
         }
 
-        .shop-card button {
+        .card-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .card-actions button {
             width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            font-size: 1rem;
+            padding: 8px;
+            font-size: 0.85rem;
         }
 
         /* Admin Screen Elements */
@@ -230,39 +265,68 @@
         <!-- Stickman Jump Hub Menu -->
         <div id="hub-screen" class="ui-screen">
             <h1>STICKMAN JUMP</h1>
-            <p><b>SPACE / UP:</b> Jump &nbsp;|&nbsp; <b>S / DOWN:</b> Duck &nbsp;|&nbsp; <b>E:</b> Ability</p>
+            <p><b>SPACE / UP:</b> Jump &nbsp;|&nbsp; <b>S / DOWN:</b> Duck &nbsp;|&nbsp; <b>E / Q:</b> Abilities</p>
             <p id="hub-highscore" style="color: #00e676; margin-top: 8px;">High Score: 0</p>
             <p id="hub-coins" style="color: #ffd700;">Total Coins: 0</p>
+            <p id="hub-equipped" style="color: #00ffff; font-weight: bold; margin-top: 4px;">Equipped Ability: None</p>
             <div class="btn-group">
                 <button id="play-btn">Play</button>
                 <button id="shop-btn" class="gold">Shop</button>
             </div>
         </div>
 
-        <!-- Shop Screen -->
+        <!-- Shop Screen (Scrollable) -->
         <div id="shop-screen" class="ui-screen hidden">
-            <h1 style="color: #ffd700;">SHOP</h1>
-            <p id="shop-coins" style="color: #ffd700; font-weight: bold; font-size: 1.3rem;">Coins Available: 0</p>
-            
-            <div class="shop-container">
-                <!-- Hacker Ability Card -->
-                <div class="shop-card">
-                    <h3>💻 Hacker Ability</h3>
-                    <div id="hacker-level-text" class="level-badge">Level: 0 / 3</div>
-                    
-                    <div id="hacker-current-desc" class="desc-box">
-                        <b>Current:</b> Not Purchased
-                    </div>
-                    
-                    <div id="hacker-next-desc" class="desc-box">
-                        <b>Next Level:</b> Hacker Lvl 1 (10 Coins, 6.5s CD) - Turn 1 nearest obstacle green & pass through safely.
+            <div class="shop-wrapper">
+                <h1 style="color: #ffd700;">SHOP</h1>
+                <p id="shop-coins" style="color: #ffd700; font-weight: bold; font-size: 1.2rem;">Coins Available: 0</p>
+                
+                <div class="shop-container">
+                    <!-- Hacker Card -->
+                    <div class="shop-card hacker">
+                        <div>
+                            <h3 style="color:#00ff66;">💻 Hacker</h3>
+                            <div id="hacker-level-text" class="level-badge">Level: 0 / 3</div>
+                            <div id="hacker-current-desc" class="desc-box">Current: Locked</div>
+                            <div id="hacker-next-desc" class="desc-box">Next: Turn 1 obstacle green.</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="buy-hacker-btn" class="gold">Buy Lvl 1 (10 Coins)</button>
+                            <button id="equip-hacker-btn" class="secondary">Equip</button>
+                        </div>
                     </div>
 
-                    <button id="buy-hacker-btn" class="gold">Buy Lvl 1 (10 Coins)</button>
+                    <!-- Magnet Card -->
+                    <div class="shop-card magnet">
+                        <div>
+                            <h3 style="color:#ff3366;">🧲 Magnet</h3>
+                            <div id="magnet-level-text" class="level-badge">Level: 0 / 2</div>
+                            <div id="magnet-current-desc" class="desc-box">Current: Locked</div>
+                            <div id="magnet-next-desc" class="desc-box">Next: Pull nearby coins.</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="buy-magnet-btn" class="gold">Buy Lvl 1 (10 Coins)</button>
+                            <button id="equip-magnet-btn" class="secondary">Equip</button>
+                        </div>
+                    </div>
+
+                    <!-- Slime Card -->
+                    <div class="shop-card slime">
+                        <div>
+                            <h3 style="color:#00ffaa;">🧪 Slime</h3>
+                            <div id="slime-level-text" class="level-badge">Level: 0 / 2</div>
+                            <div id="slime-current-desc" class="desc-box">Current: Locked</div>
+                            <div id="slime-next-desc" class="desc-box">Next: Slow down game speed.</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="buy-slime-btn" class="gold">Buy Lvl 1 (15 Coins)</button>
+                            <button id="equip-slime-btn" class="secondary">Equip</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <button id="shop-back-btn" class="secondary">Back to Hub</button>
+                <button id="shop-back-btn" class="secondary" style="margin-top: 10px;">Back to Hub</button>
+            </div>
         </div>
 
         <!-- Game Over Screen -->
@@ -331,6 +395,7 @@
         
         const hubHighscoreText = document.getElementById('hub-highscore');
         const hubCoinsText = document.getElementById('hub-coins');
+        const hubEquippedText = document.getElementById('hub-equipped');
         const shopCoinsText = document.getElementById('shop-coins');
         const finalScoreText = document.getElementById('final-score');
         const highScoreText = document.getElementById('high-score');
@@ -342,6 +407,19 @@
         const hackerCurrentDesc = document.getElementById('hacker-current-desc');
         const hackerNextDesc = document.getElementById('hacker-next-desc');
         const buyHackerBtn = document.getElementById('buy-hacker-btn');
+        const equipHackerBtn = document.getElementById('equip-hacker-btn');
+
+        const magnetLevelText = document.getElementById('magnet-level-text');
+        const magnetCurrentDesc = document.getElementById('magnet-current-desc');
+        const magnetNextDesc = document.getElementById('magnet-next-desc');
+        const buyMagnetBtn = document.getElementById('buy-magnet-btn');
+        const equipMagnetBtn = document.getElementById('equip-magnet-btn');
+
+        const slimeLevelText = document.getElementById('slime-level-text');
+        const slimeCurrentDesc = document.getElementById('slime-current-desc');
+        const slimeNextDesc = document.getElementById('slime-next-desc');
+        const buySlimeBtn = document.getElementById('buy-slime-btn');
+        const equipSlimeBtn = document.getElementById('equip-slime-btn');
 
         // Buttons
         const playBtn = document.getElementById('play-btn');
@@ -377,6 +455,9 @@
         let totalCoins = parseInt(localStorage.getItem('stickman_coins')) || 0;
         let highScore = parseInt(localStorage.getItem('stickman_highscore')) || 0;
         let hackerLevel = parseInt(localStorage.getItem('stickman_hacker_lvl')) || 0;
+        let magnetLevel = parseInt(localStorage.getItem('stickman_magnet_lvl')) || 0;
+        let slimeLevel = parseInt(localStorage.getItem('stickman_slime_lvl')) || 0;
+        let equippedAbility = localStorage.getItem('stickman_equipped') || 'none'; // 'hacker', 'magnet', 'slime', or 'none'
 
         // Game State Variables
         let gameState = 'HUB';
@@ -384,6 +465,7 @@
         let gameSpeed = 5;
         let obstacles = [];
         let coins = [];
+        let particles = [];
         let spawnTimer = 0;
         let coinSpawnTimer = 0;
         let nextSpawnInterval = 100;
@@ -391,16 +473,24 @@
         let spawnPausedTimer = 0;
 
         // Ability States
-        let abilityCooldown = 0;
+        let abilityCooldownE = 0;
+        let abilityCooldownQ = 0;
         let hackerLvl3Timer = 0;
         let lagAnimationTimer = 0;
         let hackerCharges = 0;
+
+        // Slime Blob active entity
+        let slimeBlob = null;
+        let slimeFloorPuddles = [];
 
         // Save progress function
         function saveGameData() {
             localStorage.setItem('stickman_coins', totalCoins);
             localStorage.setItem('stickman_highscore', highScore);
             localStorage.setItem('stickman_hacker_lvl', hackerLevel);
+            localStorage.setItem('stickman_magnet_lvl', magnetLevel);
+            localStorage.setItem('stickman_slime_lvl', slimeLevel);
+            localStorage.setItem('stickman_equipped', equippedAbility);
         }
 
         // Player (Stickman) State
@@ -431,7 +521,7 @@
             duck(shouldDuck) {
                 if (shouldDuck) {
                     this.isDucking = true;
-                    this.height = 25;
+                    this.height = 20; // Lower height hit-box for clean ducking
                 } else {
                     this.isDucking = false;
                     this.height = 50;
@@ -466,7 +556,7 @@
 
                 let offsetX = (hackerLvl3Timer > 0 && Math.random() < 0.4) ? (Math.random() * 6 - 3) : 0;
 
-                // Head
+                // Draw Head
                 ctx.beginPath();
                 ctx.arc(this.x + offsetX, headY, this.radius, 0, Math.PI * 2);
                 ctx.stroke();
@@ -475,21 +565,21 @@
                     // Crouched Body
                     ctx.beginPath();
                     ctx.moveTo(this.x + offsetX, headY + this.radius);
-                    ctx.lineTo(this.x - 8 + offsetX, this.y - 10);
+                    ctx.lineTo(this.x - 8 + offsetX, this.y - 8);
                     ctx.stroke();
 
                     // Crouched Legs
                     ctx.beginPath();
-                    ctx.moveTo(this.x - 8 + offsetX, this.y - 10);
+                    ctx.moveTo(this.x - 8 + offsetX, this.y - 8);
                     ctx.lineTo(this.x - 18 + offsetX, this.y);
-                    ctx.moveTo(this.x - 8 + offsetX, this.y - 10);
+                    ctx.moveTo(this.x - 8 + offsetX, this.y - 8);
                     ctx.lineTo(this.x + 8 + offsetX, this.y);
                     ctx.stroke();
 
                     // Crouched Arms
                     ctx.beginPath();
-                    ctx.moveTo(this.x + offsetX, headY + this.radius + 4);
-                    ctx.lineTo(this.x + 10 + offsetX, headY + this.radius + 12);
+                    ctx.moveTo(this.x + offsetX, headY + this.radius + 2);
+                    ctx.lineTo(this.x + 10 + offsetX, headY + this.radius + 8);
                     ctx.stroke();
                 } else {
                     // Normal Standing Body
@@ -521,6 +611,16 @@
                     ctx.stroke();
                 }
 
+                // MAGNET VISUAL ANIMATION
+                if (equippedAbility === 'magnet' && magnetLevel > 0) {
+                    ctx.strokeStyle = '#ff2255';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(this.x + 18, headY + 12, 6, Math.PI * 0.8, Math.PI * 0.2, true);
+                    ctx.stroke();
+                }
+
+                // Glitch effect if Hacker Lvl 3 active
                 if (hackerLvl3Timer > 0 && Math.random() < 0.5) {
                     ctx.strokeStyle = '#00ffff';
                     ctx.lineWidth = 1;
@@ -534,28 +634,67 @@
             }
         };
 
-        // Ability Logic trigger
-        function activateAbility() {
-            if (gameState !== 'PLAYING' || hackerLevel === 0 || abilityCooldown > 0) return;
+        // Ability Logic triggers
+        function triggerAbilityE() {
+            if (gameState !== 'PLAYING') return;
 
-            if (hackerLevel === 1) {
-                let nearest = getUpcomingObstacles(1);
-                nearest.forEach(obs => obs.hacked = true);
-                abilityCooldown = 6.5 * 60;
-            } else if (hackerLevel === 2) {
-                hackerCharges = 3;
-                let nearest = getUpcomingObstacles(3);
-                nearest.forEach(obs => {
-                    if (hackerCharges > 0 && !obs.hacked) {
-                        obs.hacked = true;
-                        hackerCharges--;
-                    }
-                });
-                abilityCooldown = 8.0 * 60;
-            } else if (hackerLevel === 3) {
-                hackerLvl3Timer = 9.0 * 60;
-                abilityCooldown = 13.0 * 60;
+            if (equippedAbility === 'hacker' && hackerLevel > 0 && abilityCooldownE <= 0) {
+                if (hackerLevel === 1) {
+                    let nearest = getUpcomingObstacles(1);
+                    nearest.forEach(obs => obs.hacked = true);
+                    abilityCooldownE = 6.5 * 60;
+                } else if (hackerLevel === 2) {
+                    hackerCharges = 3;
+                    let nearest = getUpcomingObstacles(3);
+                    nearest.forEach(obs => {
+                        if (hackerCharges > 0 && !obs.hacked) {
+                            obs.hacked = true;
+                            hackerCharges--;
+                        }
+                    });
+                    abilityCooldownE = 15.0 * 60; // Set to 15s
+                } else if (hackerLevel === 3) {
+                    hackerLvl3Timer = 9.0 * 60;
+                    abilityCooldownE = 15.0 * 60; // Set to 15s
+                }
             }
+
+            if (equippedAbility === 'slime' && slimeLevel > 0 && abilityCooldownE <= 0) {
+                if (slimeLevel === 1) {
+                    // Throw Slime Slowdown
+                    throwSlimePuddle();
+                    gameSpeed = Math.max(3.5, gameSpeed * 0.6);
+                    abilityCooldownE = 20.0 * 60;
+                } else if (slimeLevel === 2) {
+                    // Summon Slime Blob Companion (shrinks next 5 obstacles)
+                    slimeBlob = {
+                        x: player.x + 20,
+                        y: GROUND_Y,
+                        targetObstaclesRemaining: 5,
+                        state: 'RUNNING'
+                    };
+                    abilityCooldownE = 20.0 * 60;
+                }
+            }
+        }
+
+        function triggerAbilityQ() {
+            if (gameState !== 'PLAYING') return;
+
+            if (equippedAbility === 'slime' && slimeLevel === 2 && abilityCooldownQ <= 0) {
+                // Slime Level 2 Q ability: Throw floor slime slowdown
+                throwSlimePuddle();
+                gameSpeed = Math.max(3.5, gameSpeed * 0.6);
+                abilityCooldownQ = 18.0 * 60;
+            }
+        }
+
+        function throwSlimePuddle() {
+            slimeFloorPuddles.push({
+                x: player.x + 40,
+                width: 70,
+                life: 60
+            });
         }
 
         function getUpcomingObstacles(count) {
@@ -584,7 +723,11 @@
             }
             if (e.code === 'KeyE') {
                 e.preventDefault();
-                activateAbility();
+                triggerAbilityE();
+            }
+            if (e.code === 'KeyQ') {
+                e.preventDefault();
+                triggerAbilityQ();
             }
         });
 
@@ -604,7 +747,15 @@
         shopBackBtn.addEventListener('click', showHubMenu);
         retryBtn.addEventListener('click', startGame);
         menuBtn.addEventListener('click', showHubMenu);
-        buyHackerBtn.addEventListener('click', purchaseHackerUpgrade);
+
+        // Shop Buy & Equip Listeners
+        buyHackerBtn.addEventListener('click', () => purchaseAbility('hacker'));
+        buyMagnetBtn.addEventListener('click', () => purchaseAbility('magnet'));
+        buySlimeBtn.addEventListener('click', () => purchaseAbility('slime'));
+
+        equipHackerBtn.addEventListener('click', () => equipAbility('hacker'));
+        equipMagnetBtn.addEventListener('click', () => equipAbility('magnet'));
+        equipSlimeBtn.addEventListener('click', () => equipAbility('slime'));
 
         // Admin Listeners
         adminLoginBtn.addEventListener('click', submitAdminPass);
@@ -630,6 +781,9 @@
             totalCoins = 0;
             highScore = 0;
             hackerLevel = 0;
+            magnetLevel = 0;
+            slimeLevel = 0;
+            equippedAbility = 'none';
             saveGameData();
             updateAdminPanelUI();
             alert("All progress has been fully reset!");
@@ -666,41 +820,100 @@
         // Shop Interface Management
         function updateShopUI() {
             shopCoinsText.textContent = `Coins Available: ${totalCoins}`;
-            hackerLevelText.textContent = `Level: ${hackerLevel} / 3`;
 
+            // Hacker
+            hackerLevelText.textContent = `Level: ${hackerLevel} / 3`;
             if (hackerLevel === 0) {
-                hackerCurrentDesc.innerHTML = `<b>Current:</b> Ability Locked`;
-                hackerNextDesc.innerHTML = `<b>Next Level:</b> Hacker Lvl 1 (CD: 6.5s)<br>Turn 1 nearest obstacle green & pass through safely.`;
+                hackerCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
+                hackerNextDesc.innerHTML = `<b>Lvl 1:</b> Hack 1 obstacle green. (CD: 6.5s)`;
                 buyHackerBtn.textContent = `Buy Lvl 1 (10 Coins)`;
                 buyHackerBtn.disabled = totalCoins < 10;
             } else if (hackerLevel === 1) {
-                hackerCurrentDesc.innerHTML = `<b>Current (Lvl 1):</b> Hacks 1 obstacle green on activation. (CD: 6.5s)`;
-                hackerNextDesc.innerHTML = `<b>Next Level:</b> Hacker Lvl 2 (CD: 8.0s)<br>Hacks the NEXT 3 obstacles green, even if offscreen!`;
+                hackerCurrentDesc.innerHTML = `<b>Lvl 1:</b> Hack 1 obstacle green. (CD: 6.5s)`;
+                hackerNextDesc.innerHTML = `<b>Lvl 2:</b> Hack NEXT 3 obstacles! (CD: 15s)`;
                 buyHackerBtn.textContent = `Upgrade Lvl 2 (35 Coins)`;
                 buyHackerBtn.disabled = totalCoins < 35;
             } else if (hackerLevel === 2) {
-                hackerCurrentDesc.innerHTML = `<b>Current (Lvl 2):</b> Hacks the next 3 obstacles green & passible! (CD: 8.0s)`;
-                hackerNextDesc.innerHTML = `<b>Next Level:</b> Hacker Lvl 3 (CD: 13.0s)<br>Invincibility mode for 9 seconds, then clears screen with purple lag effect!`;
+                hackerCurrentDesc.innerHTML = `<b>Lvl 2:</b> Hack next 3 obstacles! (CD: 15s)`;
+                hackerNextDesc.innerHTML = `<b>Lvl 3:</b> 9s Invincibility mode! (CD: 15s)`;
                 buyHackerBtn.textContent = `Upgrade Lvl 3 (100 Coins)`;
                 buyHackerBtn.disabled = totalCoins < 100;
             } else {
-                hackerCurrentDesc.innerHTML = `<b>Current (Lvl 3 MAX):</b> Turns purple for 9s invincibility, followed by a screen-clearing lag burst! (CD: 13s)`;
-                hackerNextDesc.innerHTML = `<b>Next Level:</b> MAX LEVEL REACHED!`;
-                buyHackerBtn.textContent = `MAXED OUT`;
+                hackerCurrentDesc.innerHTML = `<b>Lvl 3 MAX:</b> 9s Invincibility + Lag Burst! (CD: 15s)`;
+                hackerNextDesc.innerHTML = `<b>Next:</b> MAX LEVEL`;
+                buyHackerBtn.textContent = `MAXED`;
                 buyHackerBtn.disabled = true;
             }
+            equipHackerBtn.disabled = hackerLevel === 0;
+            equipHackerBtn.textContent = equippedAbility === 'hacker' ? 'EQUIPPED' : 'Equip';
+            equipHackerBtn.className = equippedAbility === 'hacker' ? 'equipped' : 'secondary';
+
+            // Magnet
+            magnetLevelText.textContent = `Level: ${magnetLevel} / 2`;
+            if (magnetLevel === 0) {
+                magnetCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
+                magnetNextDesc.innerHTML = `<b>Lvl 1:</b> Magnet pulls nearby coins to you.`;
+                buyMagnetBtn.textContent = `Buy Lvl 1 (10 Coins)`;
+                buyMagnetBtn.disabled = totalCoins < 10;
+            } else if (magnetLevel === 1) {
+                magnetCurrentDesc.innerHTML = `<b>Lvl 1:</b> Pulls nearby coins to you.`;
+                magnetNextDesc.innerHTML = `<b>Lvl 2:</b> Farther reach + 5% chance for Money Bags (5 Coins)!`;
+                buyMagnetBtn.textContent = `Upgrade Lvl 2 (40 Coins)`;
+                buyMagnetBtn.disabled = totalCoins < 40;
+            } else {
+                magnetCurrentDesc.innerHTML = `<b>Lvl 2 MAX:</b> Farther magnetic pull + 5% Money Bags!`;
+                magnetNextDesc.innerHTML = `<b>Next:</b> MAX LEVEL`;
+                buyMagnetBtn.textContent = `MAXED`;
+                buyMagnetBtn.disabled = true;
+            }
+            equipMagnetBtn.disabled = magnetLevel === 0;
+            equipMagnetBtn.textContent = equippedAbility === 'magnet' ? 'EQUIPPED' : 'Equip';
+            equipMagnetBtn.className = equippedAbility === 'magnet' ? 'equipped' : 'secondary';
+
+            // Slime
+            slimeLevelText.textContent = `Level: ${slimeLevel} / 2`;
+            if (slimeLevel === 0) {
+                slimeCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
+                slimeNextDesc.innerHTML = `<b>Lvl 1:</b> Throw slime on floor to slow game speed. (CD: 20s)`;
+                buySlimeBtn.textContent = `Buy Lvl 1 (15 Coins)`;
+                buySlimeBtn.disabled = totalCoins < 15;
+            } else if (slimeLevel === 1) {
+                slimeCurrentDesc.innerHTML = `<b>Lvl 1:</b> Throw floor slime to slow game. (CD: 20s)`;
+                slimeNextDesc.innerHTML = `<b>Lvl 2:</b> Add [E] Slime Blob companion to shrink 5 obstacles!`;
+                buySlimeBtn.textContent = `Upgrade Lvl 2 (65 Coins)`;
+                buySlimeBtn.disabled = totalCoins < 65;
+            } else {
+                slimeCurrentDesc.innerHTML = `<b>Lvl 2 MAX:</b> [Q] Slowdown (18s CD) | [E] Slime Blob shrinks 5 obstacles (20s CD)!`;
+                slimeNextDesc.innerHTML = `<b>Next:</b> MAX LEVEL`;
+                buySlimeBtn.textContent = `MAXED`;
+                buySlimeBtn.disabled = true;
+            }
+            equipSlimeBtn.disabled = slimeLevel === 0;
+            equipSlimeBtn.textContent = equippedAbility === 'slime' ? 'EQUIPPED' : 'Equip';
+            equipSlimeBtn.className = equippedAbility === 'slime' ? 'equipped' : 'secondary';
         }
 
-        function purchaseHackerUpgrade() {
-            if (hackerLevel === 0 && totalCoins >= 10) {
-                totalCoins -= 10;
-                hackerLevel = 1;
-            } else if (hackerLevel === 1 && totalCoins >= 35) {
-                totalCoins -= 35;
-                hackerLevel = 2;
-            } else if (hackerLevel === 2 && totalCoins >= 100) {
-                totalCoins -= 100;
-                hackerLevel = 3;
+        function purchaseAbility(ability) {
+            if (ability === 'hacker') {
+                if (hackerLevel === 0 && totalCoins >= 10) { totalCoins -= 10; hackerLevel = 1; equippedAbility = 'hacker'; }
+                else if (hackerLevel === 1 && totalCoins >= 35) { totalCoins -= 35; hackerLevel = 2; }
+                else if (hackerLevel === 2 && totalCoins >= 100) { totalCoins -= 100; hackerLevel = 3; }
+            } else if (ability === 'magnet') {
+                if (magnetLevel === 0 && totalCoins >= 10) { totalCoins -= 10; magnetLevel = 1; equippedAbility = 'magnet'; }
+                else if (magnetLevel === 1 && totalCoins >= 40) { totalCoins -= 40; magnetLevel = 2; }
+            } else if (ability === 'slime') {
+                if (slimeLevel === 0 && totalCoins >= 15) { totalCoins -= 15; slimeLevel = 1; equippedAbility = 'slime'; }
+                else if (slimeLevel === 1 && totalCoins >= 65) { totalCoins -= 65; slimeLevel = 2; }
+            }
+            saveGameData();
+            updateShopUI();
+        }
+
+        function equipAbility(ability) {
+            if (equippedAbility === ability) {
+                equippedAbility = 'none';
+            } else {
+                equippedAbility = ability;
             }
             saveGameData();
             updateShopUI();
@@ -711,6 +924,7 @@
             gameState = 'HUB';
             hubHighscoreText.textContent = `High Score: ${highScore}`;
             hubCoinsText.textContent = `Total Coins: ${totalCoins}`;
+            hubEquippedText.textContent = `Equipped Ability: ${equippedAbility.toUpperCase()}`;
             
             hubScreen.classList.remove('hidden');
             shopScreen.classList.add('hidden');
@@ -762,12 +976,19 @@
             gameSpeed = 5;
             obstacles = [];
             coins = [];
+            particles = [];
+            slimeFloorPuddles = [];
+            slimeBlob = null;
             spawnTimer = 0;
             coinSpawnTimer = 0;
             spawnPausedTimer = 0;
             nextSpawnInterval = 80;
             nextCoinInterval = 250 + Math.floor(Math.random() * 200);
-            abilityCooldown = 0;
+            
+            // Ability Cooldowns
+            abilityCooldownE = (equippedAbility === 'slime') ? 10 * 60 : 0; // Starts at 10s cooldown for Slime
+            abilityCooldownQ = (equippedAbility === 'slime') ? 10 * 60 : 0;
+            
             hackerLvl3Timer = 0;
             lagAnimationTimer = 0;
             hackerCharges = 0;
@@ -777,8 +998,8 @@
         function spawnObstacle() {
             if (spawnPausedTimer > 0) return;
 
-            const allowFlying = score >= 150;
-            const isFlying = allowFlying && Math.random() < 0.35;
+            const allowFlying = score >= 120;
+            const isFlying = allowFlying && Math.random() < 0.4;
             const sizeScale = Math.min(1.4, 1 + score / 1200);
 
             let isHacked = false;
@@ -788,11 +1009,23 @@
             }
 
             if (isFlying) {
-                const width = Math.floor((Math.random() * 30 + 35) * sizeScale);
-                const height = 22;
-                const y = GROUND_Y - Math.floor(Math.random() * 35 + 45); 
+                const width = Math.floor((Math.random() * 30 + 40) * sizeScale);
+                
+                // UNJUMPABLE AIR OBSTACLES: Height extends all the way to top of screen!
+                const isTallAir = Math.random() < 0.5;
+                let y, height;
 
-                obstacles.push({ x: canvas.width, y, width, height, hacked: isHacked });
+                if (isTallAir) {
+                    // Must crouch under (Extends high up)
+                    y = 0; 
+                    height = GROUND_Y - 32; // Clears crouching player perfectly
+                } else {
+                    // Low air obstacle (also requires crouching)
+                    y = GROUND_Y - 55;
+                    height = 25;
+                }
+
+                obstacles.push({ x: canvas.width, y, width, height, hacked: isHacked, isFlying: true });
             } else {
                 const width = Math.min(110, Math.floor((Math.random() * 70 + 30) * sizeScale));
                 
@@ -808,7 +1041,8 @@
                     y: GROUND_Y - height,
                     width,
                     height,
-                    hacked: isHacked
+                    hacked: isHacked,
+                    isFlying: false
                 });
             }
         }
@@ -817,18 +1051,23 @@
             const isAirCoin = Math.random() < 0.6; 
             const y = isAirCoin ? GROUND_Y - Math.floor(Math.random() * 50 + 60) : GROUND_Y - 20;
 
+            // 5% Chance for Money Bag if Magnet Lvl 2
+            const isMoneyBag = (equippedAbility === 'magnet' && magnetLevel === 2 && Math.random() < 0.05);
+
             coins.push({
                 x: canvas.width,
                 y: y,
-                radius: 10
+                radius: isMoneyBag ? 14 : 10,
+                isBag: isMoneyBag,
+                value: isMoneyBag ? 5 : 1
             });
         }
 
         function checkCollision(player, obs) {
             if (obs.hacked || hackerLvl3Timer > 0) return false;
 
-            const playerLeft = player.x - 10;
-            const playerRight = player.x + 10;
+            const playerLeft = player.x - 8;
+            const playerRight = player.x + 8;
             const playerTop = player.y - player.height - player.radius;
             const playerBottom = player.y;
 
@@ -841,8 +1080,8 @@
         }
 
         function checkCoinCollection(player, coin) {
-            const playerLeft = player.x - 10;
-            const playerRight = player.x + 10;
+            const playerLeft = player.x - 12;
+            const playerRight = player.x + 12;
             const playerTop = player.y - player.height - player.radius;
             const playerBottom = player.y;
 
@@ -879,12 +1118,14 @@
             drawEnvironment();
 
             if (gameState === 'PLAYING') {
-                gameSpeed += 0.0022; 
+                gameSpeed += 0.002; 
                 score += gameSpeed * 0.05;
 
-                if (abilityCooldown > 0) abilityCooldown--;
+                if (abilityCooldownE > 0) abilityCooldownE--;
+                if (abilityCooldownQ > 0) abilityCooldownQ--;
                 if (spawnPausedTimer > 0) spawnPausedTimer--;
 
+                // Hacker Level 3 Invincibility Timer
                 if (hackerLvl3Timer > 0) {
                     hackerLvl3Timer--;
                     if (hackerLvl3Timer === 0) {
@@ -896,6 +1137,79 @@
 
                 player.update();
                 player.draw();
+
+                // --- Handle Slime Puddles & Companion Blob ---
+                for (let i = slimeFloorPuddles.length - 1; i >= 0; i--) {
+                    let p = slimeFloorPuddles[i];
+                    p.x -= gameSpeed;
+                    p.life--;
+
+                    ctx.fillStyle = '#00ff66';
+                    ctx.beginPath();
+                    ctx.ellipse(p.x, GROUND_Y - 2, p.width / 2, 6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (p.life <= 0) slimeFloorPuddles.splice(i, 1);
+                }
+
+                if (slimeBlob) {
+                    slimeBlob.x += 4; // Blob moves forward fast!
+
+                    // Draw Slime Blob with eyes
+                    ctx.fillStyle = '#00ffaa';
+                    ctx.beginPath();
+                    ctx.arc(slimeBlob.x, GROUND_Y - 14, 16, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Eyes
+                    ctx.fillStyle = '#000000';
+                    ctx.beginPath();
+                    ctx.arc(slimeBlob.x + 6, GROUND_Y - 18, 3, 0, Math.PI * 2);
+                    ctx.arc(slimeBlob.x + 12, GROUND_Y - 18, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Check obstacle eating
+                    obstacles.forEach(obs => {
+                        if (!obs.shunk && slimeBlob.x > obs.x) {
+                            obs.shunk = true;
+                            obs.height = Math.max(8, obs.height * 0.3);
+                            if (!obs.isFlying) obs.y = GROUND_Y - obs.height;
+                            slimeBlob.targetObstaclesRemaining--;
+                        }
+                    });
+
+                    // Gloaming dissolve when 5 obstacles eaten or off-screen
+                    if (slimeBlob.targetObstaclesRemaining <= 0 || slimeBlob.x > canvas.width + 50) {
+                        // Create gloop splash effect
+                        for (let k = 0; k < 12; k++) {
+                            particles.push({
+                                x: slimeBlob.x,
+                                y: GROUND_Y - 10,
+                                vx: (Math.random() - 0.5) * 6,
+                                vy: -Math.random() * 5,
+                                life: 25,
+                                color: '#00ffaa'
+                            });
+                        }
+                        slimeBlob = null;
+                    }
+                }
+
+                // --- Handle Particles ---
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let pt = particles[i];
+                    pt.x += pt.vx;
+                    pt.y += pt.vy;
+                    pt.vy += 0.3;
+                    pt.life--;
+
+                    ctx.fillStyle = pt.color;
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (pt.life <= 0) particles.splice(i, 1);
+                }
 
                 // --- Handle Obstacles ---
                 spawnTimer++;
@@ -927,7 +1241,7 @@
                     }
                 }
 
-                // --- Handle Coins ---
+                // --- Handle Coins & Magnet Pull ---
                 coinSpawnTimer++;
                 if (coinSpawnTimer >= nextCoinInterval) {
                     spawnCoin();
@@ -935,20 +1249,45 @@
                     nextCoinInterval = Math.floor(Math.random() * 200 + 300);
                 }
 
+                const pullRadius = (equippedAbility === 'magnet') ? (magnetLevel === 1 ? 140 : 250) : 0;
+
                 for (let i = coins.length - 1; i >= 0; i--) {
                     const coin = coins[i];
                     coin.x -= gameSpeed;
 
-                    ctx.fillStyle = GOLD_COIN;
-                    ctx.beginPath();
-                    ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
+                    // Magnet Attraction Logic
+                    if (pullRadius > 0) {
+                        const dx = (player.x) - coin.x;
+                        const dy = (player.y - player.height / 2) - coin.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < pullRadius) {
+                            coin.x += (dx / dist) * 7;
+                            coin.y += (dy / dist) * 7;
+                        }
+                    }
+
+                    // Render Coins / Money Bags
+                    if (coin.isBag) {
+                        ctx.fillStyle = '#8b4513';
+                        ctx.beginPath();
+                        ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = GOLD_COIN;
+                        ctx.font = 'bold 12px sans-serif';
+                        ctx.fillText('$', coin.x - 4, coin.y + 4);
+                    } else {
+                        ctx.fillStyle = GOLD_COIN;
+                        ctx.beginPath();
+                        ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                    }
 
                     if (checkCoinCollection(player, coin)) {
-                        totalCoins += 1;
+                        totalCoins += coin.value;
                         saveGameData();
                         coins.splice(i, 1);
                         continue;
@@ -959,14 +1298,11 @@
                     }
                 }
 
-                // Render Purple Lag / Blur burst screen effect
+                // Render Purple Lag burst effect
                 if (lagAnimationTimer > 0) {
                     lagAnimationTimer--;
                     ctx.fillStyle = `rgba(176, 0, 255, ${lagAnimationTimer / 40 * 0.4})`;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                    ctx.fillStyle = '#00ffff';
-                    ctx.fillRect(0, Math.random() * canvas.height, canvas.width, Math.random() * 10 + 2);
                 }
 
                 // Render HUD
@@ -984,18 +1320,32 @@
                 ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}x`, 680, 35);
 
                 // Ability Cooldown HUD indicator
-                if (hackerLevel > 0) {
-                    ctx.font = 'bold 14px sans-serif';
+                ctx.font = 'bold 14px sans-serif';
+                if (equippedAbility === 'hacker' && hackerLevel > 0) {
                     if (hackerLvl3Timer > 0) {
                         ctx.fillStyle = '#b000ff';
                         ctx.fillText(`HACK ACTIVE: ${(hackerLvl3Timer / 60).toFixed(1)}s`, 370, 35);
-                    } else if (abilityCooldown > 0) {
+                    } else if (abilityCooldownE > 0) {
                         ctx.fillStyle = '#ff3333';
-                        ctx.fillText(`[E] Hacker: ${(abilityCooldown / 60).toFixed(1)}s`, 370, 35);
+                        ctx.fillText(`[E] Hacker: ${(abilityCooldownE / 60).toFixed(1)}s`, 370, 35);
                     } else {
                         ctx.fillStyle = '#00ff66';
                         ctx.fillText(`[E] Hacker READY!`, 370, 35);
                     }
+                } else if (equippedAbility === 'slime' && slimeLevel > 0) {
+                    let txt = '';
+                    if (slimeLevel === 1) {
+                        txt = abilityCooldownE > 0 ? `[E] Slime Slow: ${(abilityCooldownE / 60).toFixed(1)}s` : `[E] Slime Slow READY!`;
+                    } else {
+                        let qTxt = abilityCooldownQ > 0 ? `Q:${(abilityCooldownQ / 60).toFixed(1)}s` : `Q:READY`;
+                        let eTxt = abilityCooldownE > 0 ? `E:${(abilityCooldownE / 60).toFixed(1)}s` : `E:READY`;
+                        txt = `[Slime] ${qTxt} | ${eTxt}`;
+                    }
+                    ctx.fillStyle = (abilityCooldownE > 0 && abilityCooldownQ > 0) ? '#ff3333' : '#00ffaa';
+                    ctx.fillText(txt, 370, 35);
+                } else if (equippedAbility === 'magnet' && magnetLevel > 0) {
+                    ctx.fillStyle = '#ff3366';
+                    ctx.fillText(`[PASSIVE] Magnet Active`, 370, 35);
                 }
             }
 
