@@ -457,7 +457,7 @@
         let hackerLevel = parseInt(localStorage.getItem('stickman_hacker_lvl')) || 0;
         let magnetLevel = parseInt(localStorage.getItem('stickman_magnet_lvl')) || 0;
         let slimeLevel = parseInt(localStorage.getItem('stickman_slime_lvl')) || 0;
-        let equippedAbility = localStorage.getItem('stickman_equipped') || 'none'; // 'hacker', 'magnet', 'slime', or 'none'
+        let equippedAbility = localStorage.getItem('stickman_equipped') || 'none';
 
         // Game State Variables
         let gameState = 'HUB';
@@ -478,6 +478,7 @@
         let hackerLvl3Timer = 0;
         let lagAnimationTimer = 0;
         let hackerCharges = 0;
+        let isMagnetActive = false; // Magnet only visible when actively pulling
 
         // Slime Blob active entity
         let slimeBlob = null;
@@ -521,7 +522,7 @@
             duck(shouldDuck) {
                 if (shouldDuck) {
                     this.isDucking = true;
-                    this.height = 20; // Lower height hit-box for clean ducking
+                    this.height = 20;
                 } else {
                     this.isDucking = false;
                     this.height = 50;
@@ -611,13 +612,38 @@
                     ctx.stroke();
                 }
 
-                // MAGNET VISUAL ANIMATION
-                if (equippedAbility === 'magnet' && magnetLevel > 0) {
-                    ctx.strokeStyle = '#ff2255';
-                    ctx.lineWidth = 3;
+                // DETAILED & REALISTIC RED/BLUE HORSESHOE MAGNET (Only visible when active)
+                if (equippedAbility === 'magnet' && magnetLevel > 0 && isMagnetActive) {
+                    const magX = this.x + 18 + offsetX;
+                    const magY = headY + 12;
+
+                    // U-Bend Arc (Metallic Grey Connector)
+                    ctx.strokeStyle = '#aaaaaa';
+                    ctx.lineWidth = 4;
                     ctx.beginPath();
-                    ctx.arc(this.x + 18, headY + 12, 6, Math.PI * 0.8, Math.PI * 0.2, true);
+                    ctx.arc(magX, magY, 6, Math.PI, 0, false);
                     ctx.stroke();
+
+                    // Left Leg (Red - North Pole)
+                    ctx.strokeStyle = '#ff2244';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(magX - 6, magY);
+                    ctx.lineTo(magX - 6, magY + 7);
+                    ctx.stroke();
+
+                    // Right Leg (Blue - South Pole)
+                    ctx.strokeStyle = '#2266ff';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(magX + 6, magY);
+                    ctx.lineTo(magX + 6, magY + 7);
+                    ctx.stroke();
+
+                    // Metallic Tips
+                    ctx.fillStyle = '#dddddd';
+                    ctx.fillRect(magX - 8, magY + 7, 4, 2);
+                    ctx.fillRect(magX + 4, magY + 7, 4, 2);
                 }
 
                 // Glitch effect if Hacker Lvl 3 active
@@ -652,21 +678,19 @@
                             hackerCharges--;
                         }
                     });
-                    abilityCooldownE = 15.0 * 60; // Set to 15s
+                    abilityCooldownE = 15.0 * 60;
                 } else if (hackerLevel === 3) {
                     hackerLvl3Timer = 9.0 * 60;
-                    abilityCooldownE = 15.0 * 60; // Set to 15s
+                    abilityCooldownE = 15.0 * 60;
                 }
             }
 
             if (equippedAbility === 'slime' && slimeLevel > 0 && abilityCooldownE <= 0) {
                 if (slimeLevel === 1) {
-                    // Throw Slime Slowdown
                     throwSlimePuddle();
                     gameSpeed = Math.max(3.5, gameSpeed * 0.6);
                     abilityCooldownE = 20.0 * 60;
                 } else if (slimeLevel === 2) {
-                    // Summon Slime Blob Companion (shrinks next 5 obstacles)
                     slimeBlob = {
                         x: player.x + 20,
                         y: GROUND_Y,
@@ -682,7 +706,6 @@
             if (gameState !== 'PLAYING') return;
 
             if (equippedAbility === 'slime' && slimeLevel === 2 && abilityCooldownQ <= 0) {
-                // Slime Level 2 Q ability: Throw floor slime slowdown
                 throwSlimePuddle();
                 gameSpeed = Math.max(3.5, gameSpeed * 0.6);
                 abilityCooldownQ = 18.0 * 60;
@@ -706,7 +729,6 @@
 
         // Input Listeners
         window.addEventListener('keydown', (e) => {
-            // Secret Admin Trigger Shift + P
             if (e.shiftKey && (e.code === 'KeyP' || e.key === 'P')) {
                 e.preventDefault();
                 openAdminPassPrompt();
@@ -985,13 +1007,13 @@
             nextSpawnInterval = 80;
             nextCoinInterval = 250 + Math.floor(Math.random() * 200);
             
-            // Ability Cooldowns
-            abilityCooldownE = (equippedAbility === 'slime') ? 10 * 60 : 0; // Starts at 10s cooldown for Slime
+            abilityCooldownE = (equippedAbility === 'slime') ? 10 * 60 : 0;
             abilityCooldownQ = (equippedAbility === 'slime') ? 10 * 60 : 0;
             
             hackerLvl3Timer = 0;
             lagAnimationTimer = 0;
             hackerCharges = 0;
+            isMagnetActive = false;
             player.reset();
         }
 
@@ -1010,17 +1032,13 @@
 
             if (isFlying) {
                 const width = Math.floor((Math.random() * 30 + 40) * sizeScale);
-                
-                // UNJUMPABLE AIR OBSTACLES: Height extends all the way to top of screen!
                 const isTallAir = Math.random() < 0.5;
                 let y, height;
 
                 if (isTallAir) {
-                    // Must crouch under (Extends high up)
                     y = 0; 
-                    height = GROUND_Y - 32; // Clears crouching player perfectly
+                    height = GROUND_Y - 32;
                 } else {
-                    // Low air obstacle (also requires crouching)
                     y = GROUND_Y - 55;
                     height = 25;
                 }
@@ -1051,7 +1069,6 @@
             const isAirCoin = Math.random() < 0.6; 
             const y = isAirCoin ? GROUND_Y - Math.floor(Math.random() * 50 + 60) : GROUND_Y - 20;
 
-            // 5% Chance for Money Bag if Magnet Lvl 2
             const isMoneyBag = (equippedAbility === 'magnet' && magnetLevel === 2 && Math.random() < 0.05);
 
             coins.push({
@@ -1125,7 +1142,6 @@
                 if (abilityCooldownQ > 0) abilityCooldownQ--;
                 if (spawnPausedTimer > 0) spawnPausedTimer--;
 
-                // Hacker Level 3 Invincibility Timer
                 if (hackerLvl3Timer > 0) {
                     hackerLvl3Timer--;
                     if (hackerLvl3Timer === 0) {
@@ -1153,19 +1169,25 @@
                 }
 
                 if (slimeBlob) {
-                    slimeBlob.x += 4; // Blob moves forward fast!
+                    // SLIME BLOB MOVES ONLY SLIGHTLY FASTER THAN THE STICKMAN
+                    slimeBlob.x += (gameSpeed + 1.2); 
 
-                    // Draw Slime Blob with eyes
+                    // Draw Half-Circle Dome Slime
                     ctx.fillStyle = '#00ffaa';
                     ctx.beginPath();
-                    ctx.arc(slimeBlob.x, GROUND_Y - 14, 16, 0, Math.PI * 2);
+                    ctx.arc(slimeBlob.x, GROUND_Y, 20, Math.PI, 0, false);
+                    ctx.closePath();
                     ctx.fill();
 
-                    // Eyes
+                    // Single Eye (White socket + Black Pupil)
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(slimeBlob.x + 4, GROUND_Y - 10, 6, 0, Math.PI * 2);
+                    ctx.fill();
+
                     ctx.fillStyle = '#000000';
                     ctx.beginPath();
-                    ctx.arc(slimeBlob.x + 6, GROUND_Y - 18, 3, 0, Math.PI * 2);
-                    ctx.arc(slimeBlob.x + 12, GROUND_Y - 18, 3, 0, Math.PI * 2);
+                    ctx.arc(slimeBlob.x + 6, GROUND_Y - 10, 2.5, 0, Math.PI * 2);
                     ctx.fill();
 
                     // Check obstacle eating
@@ -1178,13 +1200,11 @@
                         }
                     });
 
-                    // Gloaming dissolve when 5 obstacles eaten or off-screen
                     if (slimeBlob.targetObstaclesRemaining <= 0 || slimeBlob.x > canvas.width + 50) {
-                        // Create gloop splash effect
                         for (let k = 0; k < 12; k++) {
                             particles.push({
                                 x: slimeBlob.x,
-                                y: GROUND_Y - 10,
+                                y: GROUND_Y - 5,
                                 vx: (Math.random() - 0.5) * 6,
                                 vy: -Math.random() * 5,
                                 life: 25,
@@ -1241,7 +1261,7 @@
                     }
                 }
 
-                // --- Handle Coins & Magnet Pull ---
+                // --- Handle Coins & Conditional Magnet Attraction ---
                 coinSpawnTimer++;
                 if (coinSpawnTimer >= nextCoinInterval) {
                     spawnCoin();
@@ -1250,18 +1270,19 @@
                 }
 
                 const pullRadius = (equippedAbility === 'magnet') ? (magnetLevel === 1 ? 140 : 250) : 0;
+                let currentlyPullingCoin = false;
 
                 for (let i = coins.length - 1; i >= 0; i--) {
                     const coin = coins[i];
                     coin.x -= gameSpeed;
 
-                    // Magnet Attraction Logic
                     if (pullRadius > 0) {
                         const dx = (player.x) - coin.x;
                         const dy = (player.y - player.height / 2) - coin.y;
                         const dist = Math.sqrt(dx * dx + dy * dy);
 
                         if (dist < pullRadius) {
+                            currentlyPullingCoin = true; // Magnet is actively pulling!
                             coin.x += (dx / dist) * 7;
                             coin.y += (dy / dist) * 7;
                         }
@@ -1297,6 +1318,9 @@
                         coins.splice(i, 1);
                     }
                 }
+
+                // Update Magnet Visibility State
+                isMagnetActive = currentlyPullingCoin;
 
                 // Render Purple Lag burst effect
                 if (lagAnimationTimer > 0) {
