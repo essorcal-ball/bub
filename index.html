@@ -339,7 +339,7 @@
         <div id="curse-screen" class="ui-screen hidden">
             <div class="curse-panel">
                 <h3 style="color: #b000ff;">🔮 THE ALTAR OF CURSES</h3>
-                <p style="font-size: 0.95rem; margin-bottom: 10px;">Reached an 800-point milestone! Choose a curse to proceed:</p>
+                <p style="font-size: 0.95rem; margin-bottom: 10px;">Reached a milestone! Choose a curse to proceed:</p>
                 <div class="curse-options">
                     <div class="curse-card easy" onclick="selectCurse('easy')">
                         <div>
@@ -1660,7 +1660,7 @@
                         }
                     }
 
-                    // Check for Curse Milestones every 800 score points
+                    // Check for continuous Curse Milestones every 800 score points
                     if (score >= nextCurseThreshold) {
                         nextCurseThreshold += 800;
                         triggerCursePrompt();
