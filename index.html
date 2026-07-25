@@ -193,6 +193,7 @@
         .shop-card.hacker { border-color: #00ff66; }
         .shop-card.magnet { border-color: #ff3366; }
         .shop-card.slime { border-color: #00ffaa; }
+        .shop-card.medic { border-color: #ff3333; }
 
         .shop-card.skin-default { border-color: #ffffff; }
         .shop-card.skin-green { border-color: #00ff66; }
@@ -344,6 +345,20 @@
                             <button id="equip-slime-btn" class="secondary">Equip</button>
                         </div>
                     </div>
+
+                    <!-- Medic Card -->
+                    <div class="shop-card medic">
+                        <div>
+                            <h3 style="color:#ff3333;">🏥 Medic</h3>
+                            <div id="medic-level-text" class="level-badge">Level: 0 / 2</div>
+                            <div id="medic-current-desc" class="desc-box">Current: Locked</div>
+                            <div id="medic-next-desc" class="desc-box">Next: Auto-revive once on death!</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="buy-medic-btn" class="gold">Buy Lvl 1 (18 Coins)</button>
+                            <button id="equip-medic-btn" class="secondary">Equip</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- SECTION 2: SKINS -->
@@ -456,12 +471,19 @@
         <div id="admin-panel-screen" class="ui-screen hidden">
             <div class="admin-panel">
                 <h3 style="color: #00ff66;">⚡ SECRET ADMIN PANEL</h3>
-                <p id="admin-current-coins" style="color: #ffd700; margin-bottom: 15px;">Current Coins: 0</p>
+                <p id="admin-current-coins" style="color: #ffd700; margin-bottom: 5px;">Current Coins: 0</p>
+                <p id="admin-current-score" style="color: #00e676; margin-bottom: 15px;">Current High Score: 0</p>
 
                 <!-- Set Coins -->
                 <div class="admin-row">
                     <input type="number" id="coin-input" placeholder="Amount" value="1000">
                     <button id="set-coins-btn" class="gold">Set Coins</button>
+                </div>
+
+                <!-- Set High Score -->
+                <div class="admin-row">
+                    <input type="number" id="score-input" placeholder="Amount" value="5000">
+                    <button id="set-score-btn" class="secondary" style="background:#00e676; color:#000;">Set Score</button>
                 </div>
 
                 <!-- Clear Coins -->
@@ -500,8 +522,9 @@
         const highScoreText = document.getElementById('high-score');
         const finalCoinsText = document.getElementById('final-coins');
         const adminCurrentCoinsText = document.getElementById('admin-current-coins');
+        const adminCurrentScoreText = document.getElementById('admin-current-score');
         
-        // Shop Abilities
+        // Shop Abilities UI
         const hackerLevelText = document.getElementById('hacker-level-text');
         const hackerCurrentDesc = document.getElementById('hacker-current-desc');
         const hackerNextDesc = document.getElementById('hacker-next-desc');
@@ -519,6 +542,12 @@
         const slimeNextDesc = document.getElementById('slime-next-desc');
         const buySlimeBtn = document.getElementById('buy-slime-btn');
         const equipSlimeBtn = document.getElementById('equip-slime-btn');
+
+        const medicLevelText = document.getElementById('medic-level-text');
+        const medicCurrentDesc = document.getElementById('medic-current-desc');
+        const medicNextDesc = document.getElementById('medic-next-desc');
+        const buyMedicBtn = document.getElementById('buy-medic-btn');
+        const equipMedicBtn = document.getElementById('equip-medic-btn');
 
         // Shop Skins UI
         const skinButtons = {
@@ -552,6 +581,8 @@
         const adminPassError = document.getElementById('admin-pass-error');
         const coinInput = document.getElementById('coin-input');
         const setCoinsBtn = document.getElementById('set-coins-btn');
+        const scoreInput = document.getElementById('score-input');
+        const setScoreBtn = document.getElementById('set-score-btn');
         const clearCoinsBtn = document.getElementById('clear-coins-btn');
         const resetAllBtn = document.getElementById('reset-all-btn');
         const adminExitBtn = document.getElementById('admin-exit-btn');
@@ -574,6 +605,7 @@
         let hackerLevel = parseInt(localStorage.getItem('stickman_hacker_lvl')) || 0;
         let magnetLevel = parseInt(localStorage.getItem('stickman_magnet_lvl')) || 0;
         let slimeLevel = parseInt(localStorage.getItem('stickman_slime_lvl')) || 0;
+        let medicLevel = parseInt(localStorage.getItem('stickman_medic_lvl')) || 0;
         let equippedAbility = localStorage.getItem('stickman_equipped') || 'none';
         let equippedSkin = localStorage.getItem('stickman_equipped_skin') || 'default';
 
@@ -598,6 +630,11 @@
         let hackerCharges = 0;
         let isMagnetActive = false;
 
+        // Medic Ability State
+        let hasRevivedThisRun = false;
+        let medicLives = 0;
+        let medicReviveTimer = 0; // Animation frame timer for MedKit reveal
+
         // Slime Blob active entity
         let slimeBlob = null;
         let slimeFloorPuddles = [];
@@ -609,6 +646,7 @@
             localStorage.setItem('stickman_hacker_lvl', hackerLevel);
             localStorage.setItem('stickman_magnet_lvl', magnetLevel);
             localStorage.setItem('stickman_slime_lvl', slimeLevel);
+            localStorage.setItem('stickman_medic_lvl', medicLevel);
             localStorage.setItem('stickman_equipped', equippedAbility);
             localStorage.setItem('stickman_equipped_skin', equippedSkin);
         }
@@ -684,7 +722,7 @@
 
                 let offsetX = (hackerLvl3Timer > 0 && Math.random() < 0.4) ? (Math.random() * 6 - 3) : 0;
 
-                // --- ALIEN AURA EFFECT ---
+                // --- ALIEN / GOLD AURA EFFECT ---
                 if (equippedSkin === 'alien') {
                     ctx.shadowColor = '#00ffaa';
                     ctx.shadowBlur = 10;
@@ -692,7 +730,6 @@
                     ctx.shadowColor = '#ffd700';
                     ctx.shadowBlur = 12;
 
-                    // Gold Sparkles
                     if (Math.random() < 0.3) {
                         particles.push({
                             x: this.x + Math.random() * 20 - 10,
@@ -709,12 +746,10 @@
 
                 // --- DRAW HEAD ---
                 if (equippedSkin === 'robot') {
-                    // Square Robot Head
                     ctx.fillStyle = '#081020';
                     ctx.fillRect(this.x - 12 + offsetX, headY - 12, 24, 24);
                     ctx.strokeRect(this.x - 12 + offsetX, headY - 12, 24, 24);
 
-                    // Antenna
                     ctx.beginPath();
                     ctx.moveTo(this.x + offsetX, headY - 12);
                     ctx.lineTo(this.x + offsetX, headY - 20);
@@ -724,38 +759,31 @@
                     ctx.arc(this.x + offsetX, headY - 21, 3, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Blue Robot Visor
                     ctx.fillStyle = '#00ffff';
                     ctx.fillRect(this.x - 8 + offsetX, headY - 5, 16, 5);
                 } else if (equippedSkin === 'alien') {
-                    // Oval Alien Head
                     ctx.fillStyle = '#1a0033';
                     ctx.beginPath();
                     ctx.ellipse(this.x + offsetX, headY, 14, 18, 0, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.stroke();
 
-                    // Alien Black Eyes
                     ctx.fillStyle = '#000000';
                     ctx.beginPath();
                     ctx.ellipse(this.x - 5 + offsetX, headY - 2, 4, 7, -Math.PI / 6, 0, Math.PI * 2);
                     ctx.ellipse(this.x + 5 + offsetX, headY - 2, 4, 7, Math.PI / 6, 0, Math.PI * 2);
                     ctx.fill();
                 } else {
-                    // Standard Circle Head
                     ctx.beginPath();
                     ctx.arc(this.x + offsetX, headY, this.radius, 0, Math.PI * 2);
                     ctx.stroke();
 
-                    // PIRATE HAT & EYE PATCH
                     if (equippedSkin === 'pirate') {
-                        // Eye Patch
                         ctx.fillStyle = '#000000';
                         ctx.beginPath();
                         ctx.arc(this.x + 4 + offsetX, headY - 2, 4, 0, Math.PI * 2);
                         ctx.fill();
 
-                        // Strap
                         ctx.strokeStyle = '#000000';
                         ctx.lineWidth = 1.5;
                         ctx.beginPath();
@@ -763,7 +791,6 @@
                         ctx.lineTo(this.x + 12 + offsetX, headY + 2);
                         ctx.stroke();
 
-                        // Bandanna / Pirate Hat
                         ctx.fillStyle = '#cc0000';
                         ctx.beginPath();
                         ctx.arc(this.x + offsetX, headY - 4, this.radius + 2, Math.PI, 0, false);
@@ -774,17 +801,65 @@
                     }
                 }
 
-                ctx.shadowBlur = 0; // Reset Shadow Blur
+                ctx.shadowBlur = 0; 
 
                 // --- DRAW BODY & LIMBS ---
-                if (this.isDucking && this.isGrounded) {
-                    // Crouched Body
+                if (medicReviveTimer > 0) {
+                    // MEDIC REVIVE POSE: Holding Medkit!
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
+                    ctx.lineTo(this.x + offsetX, this.y - 15);
+                    ctx.stroke();
+
+                    // Standing Legs
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, this.y - 15);
+                    ctx.lineTo(this.x - 8 + offsetX, this.y);
+                    ctx.moveTo(this.x + offsetX, this.y - 15);
+                    ctx.lineTo(this.x + 8 + offsetX, this.y);
+                    ctx.stroke();
+
+                    // Left Arm Resting
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, headY + this.radius + 8);
+                    ctx.lineTo(this.x - 10 + offsetX, headY + this.radius + 22);
+                    ctx.stroke();
+
+                    // Right Arm Extended forward carrying Medkit
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, headY + this.radius + 8);
+                    ctx.lineTo(this.x + 18 + offsetX, headY + this.radius + 8);
+                    ctx.stroke();
+
+                    // --- DRAW MEDKIT IN HAND ---
+                    const kitX = this.x + 18 + offsetX;
+                    const kitY = headY + this.radius - 2;
+
+                    // Box Body
+                    ctx.fillStyle = '#ff2222';
+                    ctx.fillRect(kitX, kitY, 20, 16);
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(kitX, kitY, 20, 16);
+
+                    // Green/White Cross
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(kitX + 8, kitY + 3, 4, 10);
+                    ctx.fillRect(kitX + 5, kitY + 6, 10, 4);
+
+                    // Handle
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(kitX + 10, kitY, 4, Math.PI, 0, false);
+                    ctx.stroke();
+
+                } else if (this.isDucking && this.isGrounded) {
                     ctx.beginPath();
                     ctx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
                     ctx.lineTo(this.x - 8 + offsetX, this.y - 8);
                     ctx.stroke();
 
-                    // Crouched Legs
                     ctx.beginPath();
                     ctx.moveTo(this.x - 8 + offsetX, this.y - 8);
                     ctx.lineTo(this.x - 18 + offsetX, this.y);
@@ -792,19 +867,16 @@
                     ctx.lineTo(this.x + 8 + offsetX, this.y);
                     ctx.stroke();
 
-                    // Crouched Arms
                     ctx.beginPath();
                     ctx.moveTo(this.x + offsetX, headY + this.radius + 2);
                     ctx.lineTo(this.x + 10 + offsetX, headY + this.radius + 8);
                     ctx.stroke();
                 } else {
-                    // Normal Standing Body
                     ctx.beginPath();
                     ctx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
                     ctx.lineTo(this.x + offsetX, this.y - 15);
                     ctx.stroke();
 
-                    // Legs
                     ctx.beginPath();
                     ctx.moveTo(this.x + offsetX, this.y - 15);
                     ctx.lineTo(this.x - 10 + offsetX, this.y);
@@ -812,7 +884,6 @@
                     ctx.lineTo(this.x + 10 + offsetX, this.y);
                     ctx.stroke();
 
-                    // Arms
                     ctx.beginPath();
                     const armY = headY + this.radius + 10;
                     if (!this.isGrounded) {
@@ -827,7 +898,7 @@
                     ctx.stroke();
                 }
 
-                // DETAILED & REALISTIC RED/BLUE HORSESHOE MAGNET (Only visible when active)
+                // HORSESHOE MAGNET
                 if (equippedAbility === 'magnet' && magnetLevel > 0 && isMagnetActive) {
                     const magX = this.x + 18 + offsetX;
                     const magY = headY + 12;
@@ -856,18 +927,6 @@
                     ctx.fillRect(magX - 8, magY + 7, 4, 2);
                     ctx.fillRect(magX + 4, magY + 7, 4, 2);
                 }
-
-                // Glitch effect if Hacker Lvl 3 active
-                if (hackerLvl3Timer > 0 && Math.random() < 0.5) {
-                    ctx.strokeStyle = '#00ffff';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    let gx = this.x + Math.random() * 40 - 20;
-                    let gy = headY + Math.random() * 60;
-                    ctx.moveTo(gx - 10, gy);
-                    ctx.lineTo(gx + 10, gy);
-                    ctx.stroke();
-                }
             }
         };
 
@@ -892,7 +951,7 @@
                     abilityCooldownE = 15.0 * 60;
                 } else if (hackerLevel === 3) {
                     hackerLvl3Timer = 9.0 * 60;
-                    abilityCooldownE = 15.0 * 60;
+                    abilityCooldownE = 23.0 * 60;
                 }
             }
 
@@ -985,10 +1044,12 @@
         buyHackerBtn.addEventListener('click', () => purchaseAbility('hacker'));
         buyMagnetBtn.addEventListener('click', () => purchaseAbility('magnet'));
         buySlimeBtn.addEventListener('click', () => purchaseAbility('slime'));
+        buyMedicBtn.addEventListener('click', () => purchaseAbility('medic'));
 
         equipHackerBtn.addEventListener('click', () => equipAbility('hacker'));
         equipMagnetBtn.addEventListener('click', () => equipAbility('magnet'));
         equipSlimeBtn.addEventListener('click', () => equipAbility('slime'));
+        equipMedicBtn.addEventListener('click', () => equipAbility('medic'));
 
         // Skin Equip Listeners
         skinButtons['default'].addEventListener('click', () => equipSkin('default'));
@@ -1012,6 +1073,13 @@
             updateAdminPanelUI();
         });
 
+        setScoreBtn.addEventListener('click', () => {
+            const val = parseInt(scoreInput.value) || 0;
+            highScore = Math.max(0, val);
+            saveGameData();
+            updateAdminPanelUI();
+        });
+
         clearCoinsBtn.addEventListener('click', () => {
             totalCoins = 0;
             saveGameData();
@@ -1024,6 +1092,7 @@
             hackerLevel = 0;
             magnetLevel = 0;
             slimeLevel = 0;
+            medicLevel = 0;
             equippedAbility = 'none';
             equippedSkin = 'default';
             saveGameData();
@@ -1057,6 +1126,7 @@
 
         function updateAdminPanelUI() {
             adminCurrentCoinsText.textContent = `Current Coins: ${totalCoins}`;
+            adminCurrentScoreText.textContent = `Current High Score: ${highScore}`;
         }
 
         // Shop Interface Management
@@ -1064,7 +1134,7 @@
             shopCoinsText.textContent = `Coins Available: ${totalCoins}`;
             shopHighscoreText.textContent = `High Score: ${highScore}`;
 
-            // --- ABILITIES UI ---
+            // --- HACKER ---
             hackerLevelText.textContent = `Level: ${hackerLevel} / 3`;
             if (hackerLevel === 0) {
                 hackerCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
@@ -1078,11 +1148,11 @@
                 buyHackerBtn.disabled = totalCoins < 35;
             } else if (hackerLevel === 2) {
                 hackerCurrentDesc.innerHTML = `<b>Lvl 2:</b> Hack next 3 obstacles! (CD: 15s)`;
-                hackerNextDesc.innerHTML = `<b>Lvl 3:</b> 9s Invincibility mode! (CD: 15s)`;
+                hackerNextDesc.innerHTML = `<b>Lvl 3:</b> 9s Invincibility mode! (CD: 23s)`;
                 buyHackerBtn.textContent = `Upgrade Lvl 3 (100 Coins)`;
                 buyHackerBtn.disabled = totalCoins < 100;
             } else {
-                hackerCurrentDesc.innerHTML = `<b>Lvl 3 MAX:</b> 9s Invincibility + Lag Burst! (CD: 15s)`;
+                hackerCurrentDesc.innerHTML = `<b>Lvl 3 MAX:</b> 9s Invincibility + Lag Burst! (CD: 23s)`;
                 hackerNextDesc.innerHTML = `<b>Next:</b> MAX LEVEL`;
                 buyHackerBtn.textContent = `MAXED`;
                 buyHackerBtn.disabled = true;
@@ -1091,6 +1161,7 @@
             equipHackerBtn.textContent = equippedAbility === 'hacker' ? 'EQUIPPED' : 'Equip';
             equipHackerBtn.className = equippedAbility === 'hacker' ? 'equipped' : 'secondary';
 
+            // --- MAGNET ---
             magnetLevelText.textContent = `Level: ${magnetLevel} / 2`;
             if (magnetLevel === 0) {
                 magnetCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
@@ -1099,7 +1170,7 @@
                 buyMagnetBtn.disabled = totalCoins < 10;
             } else if (magnetLevel === 1) {
                 magnetCurrentDesc.innerHTML = `<b>Lvl 1:</b> Pulls nearby coins to you.`;
-                magnetNextDesc.innerHTML = `<b>Lvl 2:</b> Farther reach + 5% chance for Money Bags (5 Coins)!`;
+                magnetNextDesc.innerHTML = `<b>Lvl 2:</b> Farther reach + 5% Money Bags (5 Coins)!`;
                 buyMagnetBtn.textContent = `Upgrade Lvl 2 (40 Coins)`;
                 buyMagnetBtn.disabled = totalCoins < 40;
             } else {
@@ -1112,6 +1183,7 @@
             equipMagnetBtn.textContent = equippedAbility === 'magnet' ? 'EQUIPPED' : 'Equip';
             equipMagnetBtn.className = equippedAbility === 'magnet' ? 'equipped' : 'secondary';
 
+            // --- SLIME ---
             slimeLevelText.textContent = `Level: ${slimeLevel} / 2`;
             if (slimeLevel === 0) {
                 slimeCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
@@ -1133,6 +1205,28 @@
             equipSlimeBtn.textContent = equippedAbility === 'slime' ? 'EQUIPPED' : 'Equip';
             equipSlimeBtn.className = equippedAbility === 'slime' ? 'equipped' : 'secondary';
 
+            // --- MEDIC ---
+            medicLevelText.textContent = `Level: ${medicLevel} / 2`;
+            if (medicLevel === 0) {
+                medicCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
+                medicNextDesc.innerHTML = `<b>Lvl 1:</b> [PASSIVE] Auto-revive once per run! Clears obstacles.`;
+                buyMedicBtn.textContent = `Buy Lvl 1 (18 Coins)`;
+                buyMedicBtn.disabled = totalCoins < 18;
+            } else if (medicLevel === 1) {
+                medicCurrentDesc.innerHTML = `<b>Lvl 1:</b> [PASSIVE] Auto-revive once per run with Med Kit!`;
+                medicNextDesc.innerHTML = `<b>Lvl 2:</b> 8% chance to spawn Hearts (❤️) for Extra Lives!`;
+                buyMedicBtn.textContent = `Upgrade Lvl 2 (60 Coins)`;
+                buyMedicBtn.disabled = totalCoins < 60;
+            } else {
+                medicCurrentDesc.innerHTML = `<b>Lvl 2 MAX:</b> Auto-revive + 8% Heart (❤️ Extra Lives) spawns!`;
+                medicNextDesc.innerHTML = `<b>Next:</b> MAX LEVEL`;
+                buyMedicBtn.textContent = `MAXED`;
+                buyMedicBtn.disabled = true;
+            }
+            equipMedicBtn.disabled = medicLevel === 0;
+            equipMedicBtn.textContent = equippedAbility === 'medic' ? 'EQUIPPED' : 'Equip';
+            equipMedicBtn.className = equippedAbility === 'medic' ? 'equipped' : 'secondary';
+
             // --- SKINS UI ---
             const skinRequirements = {
                 'green': 1000,
@@ -1142,11 +1236,9 @@
                 'gold': 5000
             };
 
-            // Update Default Skin
             skinButtons['default'].textContent = equippedSkin === 'default' ? 'EQUIPPED' : 'Equip';
             skinButtons['default'].className = equippedSkin === 'default' ? 'equipped' : 'secondary';
 
-            // Update Unlockable Skins
             Object.keys(skinRequirements).forEach(skinKey => {
                 const req = skinRequirements[skinKey];
                 const btn = skinButtons[skinKey];
@@ -1182,6 +1274,9 @@
             } else if (ability === 'slime') {
                 if (slimeLevel === 0 && totalCoins >= 15) { totalCoins -= 15; slimeLevel = 1; equippedAbility = 'slime'; }
                 else if (slimeLevel === 1 && totalCoins >= 65) { totalCoins -= 65; slimeLevel = 2; }
+            } else if (ability === 'medic') {
+                if (medicLevel === 0 && totalCoins >= 18) { totalCoins -= 18; medicLevel = 1; equippedAbility = 'medic'; }
+                else if (medicLevel === 1 && totalCoins >= 60) { totalCoins -= 60; medicLevel = 2; }
             }
             saveGameData();
             updateShopUI();
@@ -1249,6 +1344,24 @@
         }
 
         function triggerGameOver() {
+            // CHECK MEDIC REVIVE PERKS
+            if (equippedAbility === 'medic' && medicLevel > 0) {
+                // Priority 1: Extra Lives from Hearts (Level 2 feature)
+                if (medicLives > 0) {
+                    medicLives--;
+                    triggerMedicReviveAnimation();
+                    return;
+                }
+
+                // Priority 2: Free Passive Revive (Once per run)
+                if (!hasRevivedThisRun) {
+                    hasRevivedThisRun = true;
+                    triggerMedicReviveAnimation();
+                    return;
+                }
+            }
+
+            // Normal Game Over sequence
             gameState = 'GAMEOVER';
             const currentScore = Math.floor(score);
 
@@ -1262,6 +1375,24 @@
             highScoreText.textContent = `High Score: ${highScore}`;
             finalCoinsText.textContent = `Total Coins: ${totalCoins}`;
             gameoverScreen.classList.remove('hidden');
+        }
+
+        function triggerMedicReviveAnimation() {
+            obstacles = []; // Wipe out screen obstacles instantly
+            spawnPausedTimer = 140; // Brief grace period pause
+            medicReviveTimer = 110; // ~1.8 second animation duration
+
+            // Create Green & Red Healing Sparkles
+            for (let i = 0; i < 30; i++) {
+                particles.push({
+                    x: player.x,
+                    y: player.y - 25,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 40,
+                    color: Math.random() < 0.5 ? '#00ff66' : '#ff3333'
+                });
+            }
         }
 
         function resetGameValues() {
@@ -1285,11 +1416,16 @@
             lagAnimationTimer = 0;
             hackerCharges = 0;
             isMagnetActive = false;
+
+            hasRevivedThisRun = false;
+            medicLives = 0;
+            medicReviveTimer = 0;
+
             player.reset();
         }
 
         function spawnObstacle() {
-            if (spawnPausedTimer > 0) return;
+            if (spawnPausedTimer > 0 || medicReviveTimer > 0) return;
 
             const allowFlying = score >= 120;
             const isFlying = allowFlying && Math.random() < 0.4;
@@ -1340,19 +1476,34 @@
             const isAirCoin = Math.random() < 0.6; 
             const y = isAirCoin ? GROUND_Y - Math.floor(Math.random() * 50 + 60) : GROUND_Y - 20;
 
+            // MEDIC LEVEL 2: 8% Chance of Heart Spawn
+            if (equippedAbility === 'medic' && medicLevel === 2 && Math.random() < 0.08) {
+                coins.push({
+                    x: canvas.width,
+                    y: y,
+                    radius: 12,
+                    isHeart: true,
+                    isBag: false,
+                    value: 0
+                });
+                return;
+            }
+
+            // MAGNET LEVEL 2: 5% Chance of Money Bag
             const isMoneyBag = (equippedAbility === 'magnet' && magnetLevel === 2 && Math.random() < 0.05);
 
             coins.push({
                 x: canvas.width,
                 y: y,
                 radius: isMoneyBag ? 14 : 10,
+                isHeart: false,
                 isBag: isMoneyBag,
                 value: isMoneyBag ? 5 : 1
             });
         }
 
         function checkCollision(player, obs) {
-            if (obs.hacked || hackerLvl3Timer > 0) return false;
+            if (obs.hacked || hackerLvl3Timer > 0 || medicReviveTimer > 0) return false;
 
             const playerLeft = player.x - 8;
             const playerRight = player.x + 8;
@@ -1406,8 +1557,12 @@
             drawEnvironment();
 
             if (gameState === 'PLAYING') {
-                gameSpeed += 0.002; 
-                score += gameSpeed * 0.05;
+                if (medicReviveTimer > 0) {
+                    medicReviveTimer--;
+                } else {
+                    gameSpeed += 0.002; 
+                    score += gameSpeed * 0.05;
+                }
 
                 if (abilityCooldownE > 0) abilityCooldownE--;
                 if (abilityCooldownQ > 0) abilityCooldownQ--;
@@ -1424,6 +1579,13 @@
 
                 player.update();
                 player.draw();
+
+                // --- Handle Medic Revive Banner Animation ---
+                if (medicReviveTimer > 0) {
+                    ctx.fillStyle = `rgba(0, 255, 100, ${Math.min(0.8, medicReviveTimer / 50)})`;
+                    ctx.font = 'bold 26px sans-serif';
+                    ctx.fillText('⚡ REVIVED BY MEDIC! ⚡', canvas.width / 2 - 140, 140);
+                }
 
                 // --- Handle Slime Puddles & Companion Blob ---
                 for (let i = slimeFloorPuddles.length - 1; i >= 0; i--) {
@@ -1442,14 +1604,12 @@
                 if (slimeBlob) {
                     slimeBlob.x += (gameSpeed + 1.2); 
 
-                    // Half-Circle Dome Slime
                     ctx.fillStyle = '#00ffaa';
                     ctx.beginPath();
                     ctx.arc(slimeBlob.x, GROUND_Y, 20, Math.PI, 0, false);
                     ctx.closePath();
                     ctx.fill();
 
-                    // Single Eye
                     ctx.fillStyle = '#ffffff';
                     ctx.beginPath();
                     ctx.arc(slimeBlob.x + 4, GROUND_Y - 10, 6, 0, Math.PI * 2);
@@ -1460,7 +1620,6 @@
                     ctx.arc(slimeBlob.x + 6, GROUND_Y - 10, 2.5, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Obstacle shrinking
                     obstacles.forEach(obs => {
                         if (!obs.shunk && slimeBlob.x > obs.x) {
                             obs.shunk = true;
@@ -1511,7 +1670,7 @@
 
                 for (let i = obstacles.length - 1; i >= 0; i--) {
                     const obs = obstacles[i];
-                    obs.x -= gameSpeed;
+                    if (medicReviveTimer <= 0) obs.x -= gameSpeed;
 
                     ctx.fillStyle = obs.hacked ? GREEN_HACKED : RED_OBSTACLE;
                     ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
@@ -1531,7 +1690,7 @@
                     }
                 }
 
-                // --- Handle Coins & Conditional Magnet Attraction ---
+                // --- Handle Coins / Hearts / Money Bags ---
                 coinSpawnTimer++;
                 if (coinSpawnTimer >= nextCoinInterval) {
                     spawnCoin();
@@ -1544,7 +1703,7 @@
 
                 for (let i = coins.length - 1; i >= 0; i--) {
                     const coin = coins[i];
-                    coin.x -= gameSpeed;
+                    if (medicReviveTimer <= 0) coin.x -= gameSpeed;
 
                     if (pullRadius > 0) {
                         const dx = (player.x) - coin.x;
@@ -1558,8 +1717,19 @@
                         }
                     }
 
-                    // Render Coins / Money Bags
-                    if (coin.isBag) {
+                    // Render Hearts / Money Bags / Standard Coins
+                    if (coin.isHeart) {
+                        ctx.fillStyle = '#ff1144';
+                        ctx.beginPath();
+                        ctx.arc(coin.x - 4, coin.y - 3, 6, Math.PI, 0, false);
+                        ctx.arc(coin.x + 4, coin.y - 3, 6, Math.PI, 0, false);
+                        ctx.lineTo(coin.x, coin.y + 8);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        ctx.shadowColor = '#ff0044';
+                        ctx.shadowBlur = 8;
+                    } else if (coin.isBag) {
                         ctx.fillStyle = '#8b4513';
                         ctx.beginPath();
                         ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
@@ -1576,10 +1746,25 @@
                         ctx.lineWidth = 1.5;
                         ctx.stroke();
                     }
+                    ctx.shadowBlur = 0;
 
                     if (checkCoinCollection(player, coin)) {
-                        totalCoins += coin.value;
-                        saveGameData();
+                        if (coin.isHeart) {
+                            medicLives++;
+                            for (let k = 0; k < 10; k++) {
+                                particles.push({
+                                    x: coin.x,
+                                    y: coin.y,
+                                    vx: (Math.random() - 0.5) * 4,
+                                    vy: -Math.random() * 4,
+                                    life: 20,
+                                    color: '#ff1144'
+                                });
+                            }
+                        } else {
+                            totalCoins += coin.value;
+                            saveGameData();
+                        }
                         coins.splice(i, 1);
                         continue;
                     }
@@ -1612,7 +1797,7 @@
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}x`, 680, 35);
 
-                // Ability Cooldown HUD indicator
+                // Ability Cooldown / Status HUD Indicators
                 ctx.font = 'bold 14px sans-serif';
                 if (equippedAbility === 'hacker' && hackerLevel > 0) {
                     if (hackerLvl3Timer > 0) {
@@ -1639,6 +1824,11 @@
                 } else if (equippedAbility === 'magnet' && magnetLevel > 0) {
                     ctx.fillStyle = '#ff3366';
                     ctx.fillText(`[PASSIVE] Magnet Active`, 370, 35);
+                } else if (equippedAbility === 'medic' && medicLevel > 0) {
+                    ctx.fillStyle = '#ff3333';
+                    let revStatus = (!hasRevivedThisRun) ? 'READY' : 'USED';
+                    let lifeTxt = medicLevel === 2 ? ` | Lives: ❤️ x${medicLives}` : '';
+                    ctx.fillText(`[PASSIVE] Revive: ${revStatus}${lifeTxt}`, 360, 35);
                 }
             }
 
