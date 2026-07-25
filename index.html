@@ -125,6 +125,16 @@
             box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         }
 
+        button.danger {
+            background: #ff2222;
+            color: #ffffff;
+        }
+
+        button.danger:hover {
+            background: #cc0000;
+            box-shadow: 0 0 10px rgba(255, 34, 34, 0.5);
+        }
+
         /* Shop Layout */
         .shop-container {
             display: flex;
@@ -172,6 +182,43 @@
             padding: 10px;
             margin-top: 5px;
             font-size: 1rem;
+        }
+
+        /* Admin Screen Elements */
+        .admin-panel {
+            background: #111118;
+            border: 2px solid #ff0055;
+            border-radius: 8px;
+            padding: 20px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.3);
+            text-align: center;
+        }
+
+        .admin-panel h3 {
+            color: #ff0055;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .admin-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .admin-row input[type="number"], .admin-row input[type="password"] {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ff0055;
+            background: #000;
+            color: #fff;
+            font-size: 1rem;
+            width: 160px;
+            text-align: center;
         }
     </style>
 </head>
@@ -229,6 +276,46 @@
                 <button id="menu-btn" class="secondary">Back to Hub</button>
             </div>
         </div>
+
+        <!-- Admin Passcode Screen -->
+        <div id="admin-pass-screen" class="ui-screen hidden">
+            <div class="admin-panel">
+                <h3>🔒 ADMIN AUTHENTICATION</h3>
+                <p style="margin-bottom: 12px;">Enter Passcode:</p>
+                <div class="admin-row">
+                    <input type="password" id="admin-pass-input" placeholder="Passcode">
+                    <button id="admin-login-btn">Submit</button>
+                </div>
+                <p id="admin-pass-error" style="color: #ff3333; font-size: 0.9rem; display: none;">Invalid Passcode!</p>
+                <button id="admin-pass-cancel-btn" class="secondary" style="margin-top: 10px; width: 100%;">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Admin Control Panel Screen -->
+        <div id="admin-panel-screen" class="ui-screen hidden">
+            <div class="admin-panel">
+                <h3 style="color: #00ff66;">⚡ SECRET ADMIN PANEL</h3>
+                <p id="admin-current-coins" style="color: #ffd700; margin-bottom: 15px;">Current Coins: 0</p>
+
+                <!-- Set Coins -->
+                <div class="admin-row">
+                    <input type="number" id="coin-input" placeholder="Amount" value="1000">
+                    <button id="set-coins-btn" class="gold">Set Coins</button>
+                </div>
+
+                <!-- Clear Coins -->
+                <div class="admin-row">
+                    <button id="clear-coins-btn" class="secondary" style="width: 100%;">Clear All Coins (0)</button>
+                </div>
+
+                <!-- Reset All Progress -->
+                <div class="admin-row">
+                    <button id="reset-all-btn" class="danger" style="width: 100%;">🔥 Reset All Progress</button>
+                </div>
+
+                <button id="admin-exit-btn" class="secondary" style="margin-top: 15px; width: 100%;">Exit Admin Panel</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -239,6 +326,8 @@
         const hubScreen = document.getElementById('hub-screen');
         const shopScreen = document.getElementById('shop-screen');
         const gameoverScreen = document.getElementById('gameover-screen');
+        const adminPassScreen = document.getElementById('admin-pass-screen');
+        const adminPanelScreen = document.getElementById('admin-panel-screen');
         
         const hubHighscoreText = document.getElementById('hub-highscore');
         const hubCoinsText = document.getElementById('hub-coins');
@@ -246,6 +335,7 @@
         const finalScoreText = document.getElementById('final-score');
         const highScoreText = document.getElementById('high-score');
         const finalCoinsText = document.getElementById('final-coins');
+        const adminCurrentCoinsText = document.getElementById('admin-current-coins');
         
         // Shop UI elements
         const hackerLevelText = document.getElementById('hacker-level-text');
@@ -253,11 +343,23 @@
         const hackerNextDesc = document.getElementById('hacker-next-desc');
         const buyHackerBtn = document.getElementById('buy-hacker-btn');
 
+        // Buttons
         const playBtn = document.getElementById('play-btn');
         const shopBtn = document.getElementById('shop-btn');
         const shopBackBtn = document.getElementById('shop-back-btn');
         const retryBtn = document.getElementById('retry-btn');
         const menuBtn = document.getElementById('menu-btn');
+
+        // Admin Controls
+        const adminPassInput = document.getElementById('admin-pass-input');
+        const adminLoginBtn = document.getElementById('admin-login-btn');
+        const adminPassCancelBtn = document.getElementById('admin-pass-cancel-btn');
+        const adminPassError = document.getElementById('admin-pass-error');
+        const coinInput = document.getElementById('coin-input');
+        const setCoinsBtn = document.getElementById('set-coins-btn');
+        const clearCoinsBtn = document.getElementById('clear-coins-btn');
+        const resetAllBtn = document.getElementById('reset-all-btn');
+        const adminExitBtn = document.getElementById('admin-exit-btn');
 
         // Game Constants
         const GROUND_Y = 320;
@@ -329,10 +431,10 @@
             duck(shouldDuck) {
                 if (shouldDuck) {
                     this.isDucking = true;
-                    this.height = 25; // Lower posture when crouching
+                    this.height = 25;
                 } else {
                     this.isDucking = false;
-                    this.height = 50; // Normal posture
+                    this.height = 50;
                 }
             },
 
@@ -465,6 +567,13 @@
 
         // Input Listeners
         window.addEventListener('keydown', (e) => {
+            // Secret Admin Trigger Shift + P
+            if (e.shiftKey && (e.code === 'KeyP' || e.key === 'P')) {
+                e.preventDefault();
+                openAdminPassPrompt();
+                return;
+            }
+
             if (e.code === 'Space' || e.code === 'ArrowUp') {
                 e.preventDefault();
                 if (gameState === 'PLAYING') player.jump();
@@ -496,6 +605,63 @@
         retryBtn.addEventListener('click', startGame);
         menuBtn.addEventListener('click', showHubMenu);
         buyHackerBtn.addEventListener('click', purchaseHackerUpgrade);
+
+        // Admin Listeners
+        adminLoginBtn.addEventListener('click', submitAdminPass);
+        adminPassCancelBtn.addEventListener('click', showHubMenu);
+        adminPassInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') submitAdminPass();
+        });
+
+        setCoinsBtn.addEventListener('click', () => {
+            const val = parseInt(coinInput.value) || 0;
+            totalCoins = Math.max(0, val);
+            saveGameData();
+            updateAdminPanelUI();
+        });
+
+        clearCoinsBtn.addEventListener('click', () => {
+            totalCoins = 0;
+            saveGameData();
+            updateAdminPanelUI();
+        });
+
+        resetAllBtn.addEventListener('click', () => {
+            totalCoins = 0;
+            highScore = 0;
+            hackerLevel = 0;
+            saveGameData();
+            updateAdminPanelUI();
+            alert("All progress has been fully reset!");
+        });
+
+        adminExitBtn.addEventListener('click', showHubMenu);
+
+        // Admin Functions
+        function openAdminPassPrompt() {
+            adminPassInput.value = '';
+            adminPassError.style.display = 'none';
+            adminPassScreen.classList.remove('hidden');
+            adminPassInput.focus();
+        }
+
+        function submitAdminPass() {
+            if (adminPassInput.value === 'bub') {
+                adminPassScreen.classList.add('hidden');
+                openAdminPanel();
+            } else {
+                adminPassError.style.display = 'block';
+            }
+        }
+
+        function openAdminPanel() {
+            updateAdminPanelUI();
+            adminPanelScreen.classList.remove('hidden');
+        }
+
+        function updateAdminPanelUI() {
+            adminCurrentCoinsText.textContent = `Current Coins: ${totalCoins}`;
+        }
 
         // Shop Interface Management
         function updateShopUI() {
@@ -549,6 +715,8 @@
             hubScreen.classList.remove('hidden');
             shopScreen.classList.add('hidden');
             gameoverScreen.classList.add('hidden');
+            adminPassScreen.classList.add('hidden');
+            adminPanelScreen.classList.add('hidden');
             resetGameValues();
             renderBackgroundOnly();
         }
@@ -559,6 +727,8 @@
             shopScreen.classList.remove('hidden');
             hubScreen.classList.add('hidden');
             gameoverScreen.classList.add('hidden');
+            adminPassScreen.classList.add('hidden');
+            adminPanelScreen.classList.add('hidden');
         }
 
         function startGame() {
@@ -567,6 +737,8 @@
             hubScreen.classList.add('hidden');
             shopScreen.classList.add('hidden');
             gameoverScreen.classList.add('hidden');
+            adminPassScreen.classList.add('hidden');
+            adminPanelScreen.classList.add('hidden');
         }
 
         function triggerGameOver() {
@@ -618,7 +790,6 @@
             if (isFlying) {
                 const width = Math.floor((Math.random() * 30 + 35) * sizeScale);
                 const height = 22;
-                // Can spawn lower now (Y: 240 - 275) -> Ducking cleanly passes underneath!
                 const y = GROUND_Y - Math.floor(Math.random() * 35 + 45); 
 
                 obstacles.push({ x: canvas.width, y, width, height, hacked: isHacked });
