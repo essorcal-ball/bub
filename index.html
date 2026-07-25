@@ -13,8 +13,8 @@
     }
 
     body {
-      background-color: #000;
-      color: #fff;
+      background-color: #050505;
+      color: #ffffff;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       flex-direction: column;
@@ -28,8 +28,10 @@
       position: relative;
       width: 800px;
       height: 400px;
-      border: 2px solid #444;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      border: 3px solid #333;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+      background-color: #000;
     }
 
     canvas {
@@ -43,130 +45,59 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.9);
+      background: rgba(0, 0, 0, 0.85);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       z-index: 10;
+      padding: 20px;
     }
 
     .hidden {
       display: none !important;
     }
 
-    h1, h2 {
-      margin-bottom: 15px;
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-transform: uppercase;
       letter-spacing: 2px;
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      margin-bottom: 15px;
       text-transform: uppercase;
     }
 
     .menu-btn {
       padding: 10px 24px;
       margin: 6px;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: bold;
       color: #fff;
-      background: #222;
-      border: 2px solid #666;
-      border-radius: 5px;
+      background: #1a1a1a;
+      border: 2px solid #555;
+      border-radius: 6px;
       cursor: pointer;
       transition: all 0.2s;
+      text-transform: uppercase;
     }
 
     .menu-btn:hover {
-      background: #444;
+      background: #333;
       border-color: #fff;
     }
 
     .menu-btn:disabled {
       background: #111;
-      border-color: #333;
-      color: #666;
-      cursor: default;
-    }
-
-    /* Curse Menu Modal */
-    #curse-modal h2 {
-      color: #e74c3c;
-    }
-
-    #curse-modal p {
-      margin-bottom: 15px;
-      color: #aaa;
-    }
-
-    .curse-cards-container {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    .curse-card {
-      width: 200px;
-      padding: 15px;
-      border-radius: 8px;
-      background: #111;
-      border: 2px solid #444;
-      text-align: center;
-      cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .curse-card:hover {
-      transform: translateY(-5px);
-    }
-
-    .curse-card.easy { border-color: #2ecc71; }
-    .curse-card.easy:hover { background: #0a2912; }
-    .curse-card.medium { border-color: #f39c12; }
-    .curse-card.medium:hover { background: #332104; }
-    .curse-card.hard { border-color: #e74c3c; }
-    .curse-card.hard:hover { background: #330805; }
-
-    .curse-title {
-      font-weight: bold;
-      font-size: 1.1em;
-      margin-bottom: 10px;
-    }
-
-    .curse-desc {
-      font-size: 0.85em;
-      color: #bbb;
-      margin-bottom: 10px;
-    }
-
-    .curse-reward {
-      font-size: 0.9em;
-      font-weight: bold;
-      color: #f1c40f;
-    }
-
-    .opt-out-btn {
-      padding: 10px 20px;
-      background: #333;
-      color: #fff;
-      border: 1px solid #666;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .opt-out-btn:hover {
-      background: #555;
-    }
-
-    .opt-out-btn:disabled {
-      background: #111;
-      color: #444;
       border-color: #222;
+      color: #555;
       cursor: not-allowed;
     }
 
-    /* Tabbed Shop UI */
+    /* Shop UI */
     .shop-tabs {
       display: flex;
       gap: 10px;
@@ -174,7 +105,7 @@
     }
 
     .tab-btn {
-      padding: 8px 16px;
+      padding: 8px 18px;
       background: #111;
       border: 1px solid #444;
       color: #888;
@@ -186,22 +117,22 @@
     .tab-btn.active {
       background: #333;
       color: #fff;
-      border-color: #888;
+      border-color: #aaa;
     }
 
     .shop-items {
       display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-      max-width: 720px;
+      gap: 12px;
+      margin-bottom: 15px;
+      max-width: 740px;
       overflow-x: auto;
-      padding-bottom: 10px;
+      padding: 10px 5px;
     }
 
     .shop-item {
-      width: 170px;
+      width: 160px;
       padding: 12px;
-      border: 1px solid #444;
+      border: 1px solid #333;
       background: #111;
       border-radius: 6px;
       text-align: center;
@@ -212,14 +143,84 @@
     }
 
     .shop-item h3 {
-      font-size: 1rem;
-      margin-bottom: 5px;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
     }
 
     .shop-item p {
-      font-size: 0.8rem;
-      color: #aaa;
-      margin-bottom: 8px;
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 6px;
+    }
+
+    .shop-item .price {
+      color: #f1c40f;
+      font-weight: bold;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+
+    /* Curses UI */
+    #curse-modal h2 {
+      color: #e74c3c;
+    }
+
+    .curse-cards-container {
+      display: flex;
+      gap: 15px;
+      margin: 15px 0;
+    }
+
+    .curse-card {
+      width: 200px;
+      height: 170px;
+      padding: 15px;
+      border-radius: 8px;
+      background: #111;
+      border: 2px solid #444;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s;
+    }
+
+    .curse-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .curse-card.easy { border-color: #2ecc71; }
+    .curse-card.medium { border-color: #f39c12; }
+    .curse-card.hard { border-color: #e74c3c; }
+
+    .curse-title { font-weight: bold; font-size: 1rem; margin-bottom: 6px; }
+    .curse-desc { font-size: 0.8rem; color: #aaa; }
+    .curse-reward { font-size: 0.85rem; font-weight: bold; color: #f1c40f; }
+
+    /* Admin UI */
+    #admin-modal h2 { color: #00ff66; }
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .admin-card {
+      background: #111;
+      border: 1px solid #333;
+      padding: 10px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .admin-card label { font-size: 0.8rem; color: #00ff66; }
+    .admin-card input {
+      background: #000;
+      border: 1px solid #333;
+      color: #fff;
+      padding: 5px;
     }
   </style>
 </head>
@@ -231,6 +232,7 @@
     <!-- Main Menu -->
     <div id="main-menu" class="overlay">
       <h1>Stickman Jump</h1>
+      <p style="color: #aaa; margin-bottom: 15px;">High Score: <span id="menu-high-score">0</span></p>
       <button class="menu-btn" onclick="startGame()">Play</button>
       <button class="menu-btn" onclick="openShop()">Shop</button>
     </div>
@@ -238,77 +240,110 @@
     <!-- Shop Menu -->
     <div id="shop-menu" class="overlay hidden">
       <h2>Shop</h2>
-      <p style="margin-bottom: 10px;">Coins: <span id="shop-coins">0</span></p>
+      <p style="margin-bottom: 10px;">Coins: <span id="shop-coins" style="color:#f1c40f;">0</span></p>
 
       <div class="shop-tabs">
         <button class="tab-btn active" id="tab-abilities" onclick="switchShopTab('abilities')">Abilities</button>
         <button class="tab-btn" id="tab-skins" onclick="switchShopTab('skins')">Skins</button>
       </div>
 
-      <!-- Abilities Tab -->
+      <!-- Abilities Panel -->
       <div id="abilities-panel" class="shop-items">
         <div class="shop-item">
-          <h3>Shield</h3>
-          <p>Blocks 1 hit from obstacles.</p>
-          <p style="color: #f1c40f; font-weight: bold;">15 Coins</p>
-          <button class="menu-btn" id="btn-shield" onclick="buyAbility('shield', 15)">Buy</button>
+          <h3>Hacker</h3>
+          <p>Press E to clear obstacles into coins.</p>
+          <div class="price" id="price-hacker">30 Coins</div>
+          <button class="menu-btn" id="btn-hacker" onclick="buyAbility('hacker', 30)">Buy / Upgrade</button>
         </div>
         <div class="shop-item">
           <h3>Coin Magnet</h3>
-          <p>Pulls coins toward you.</p>
-          <p style="color: #f1c40f; font-weight: bold;">20 Coins</p>
+          <p>Attracts nearby coins automatically.</p>
+          <div class="price">20 Coins</div>
           <button class="menu-btn" id="btn-magnet" onclick="buyAbility('magnet', 20)">Buy</button>
         </div>
         <div class="shop-item">
-          <h3>Dash</h3>
-          <p>Press Shift to dash forward.</p>
-          <p style="color: #f1c40f; font-weight: bold;">25 Coins</p>
-          <button class="menu-btn" id="btn-dash" onclick="buyAbility('dash', 25)">Buy</button>
+          <h3>Slime Trail</h3>
+          <p>Slows down approaching obstacles.</p>
+          <div class="price">35 Coins</div>
+          <button class="menu-btn" id="btn-slime" onclick="buyAbility('slime', 35)">Buy</button>
+        </div>
+        <div class="shop-item">
+          <h3>Medic Heart</h3>
+          <p>Grants a second chance auto-revive.</p>
+          <div class="price">40 Coins</div>
+          <button class="menu-btn" id="btn-medic" onclick="buyAbility('medic', 40)">Buy</button>
         </div>
       </div>
 
-      <!-- Skins Tab -->
+      <!-- Skins Panel -->
       <div id="skins-panel" class="shop-items hidden">
         <div class="shop-item">
-          <h3>Default (White)</h3>
-          <p>Classic stickman.</p>
+          <h3>Classic White</h3>
+          <p>Default skin.</p>
+          <div class="price">Free</div>
           <button class="menu-btn" id="btn-skin-default" onclick="selectSkin('default')">Equip</button>
         </div>
         <div class="shop-item">
-          <h3>Cyan Glow</h3>
-          <p>Bright cyan skin.</p>
-          <p style="color: #f1c40f; font-weight: bold;">10 Coins</p>
-          <button class="menu-btn" id="btn-skin-cyan" onclick="buySkin('cyan', 10)">Buy</button>
+          <h3>Pirate</h3>
+          <p>Ahoy runner!</p>
+          <div class="price">20 Coins</div>
+          <button class="menu-btn" id="btn-skin-pirate" onclick="buySkin('pirate', 20, 0)">Buy</button>
         </div>
         <div class="shop-item">
-          <h3>Neon Purple</h3>
-          <p>Purple neon style.</p>
-          <p style="color: #f1c40f; font-weight: bold;">20 Coins</p>
-          <button class="menu-btn" id="btn-skin-purple" onclick="buySkin('purple', 20)">Buy</button>
+          <h3>Robot</h3>
+          <p>Futuristic cyber frame.</p>
+          <div class="price">30 Coins</div>
+          <button class="menu-btn" id="btn-skin-robot" onclick="buySkin('robot', 30, 0)">Buy</button>
         </div>
         <div class="shop-item">
-          <h3>Gold Legend</h3>
-          <p>Golden champion skin.</p>
-          <p style="color: #f1c40f; font-weight: bold;">50 Coins</p>
-          <button class="menu-btn" id="btn-skin-gold" onclick="buySkin('gold', 50)">Buy</button>
+          <h3>Alien</h3>
+          <p>Out of this world.</p>
+          <div class="price">40 Coins</div>
+          <button class="menu-btn" id="btn-skin-alien" onclick="buySkin('alien', 40, 0)">Buy</button>
+        </div>
+        <div class="shop-item">
+          <h3>Golden Legend</h3>
+          <p>Requires High Score 1000.</p>
+          <div class="price">50 Coins</div>
+          <button class="menu-btn" id="btn-skin-gold" onclick="buySkin('gold', 50, 1000)">Buy</button>
         </div>
       </div>
 
       <button class="menu-btn" onclick="closeShop()">Back</button>
     </div>
 
-    <!-- Curse Modal -->
+    <!-- Curses Modal -->
     <div id="curse-modal" class="overlay hidden">
-      <h2>A Curse Approaches!</h2>
-      <p>Choose a curse for extra reward, or pay to skip.</p>
+      <h2>A Dark Curse Approaches!</h2>
+      <p style="color: #bbb;">Choose a curse to survive for bonus rewards.</p>
       <div class="curse-cards-container" id="cards-wrapper"></div>
-      <button class="opt-out-btn" id="opt-out-btn" onclick="optOutCurse()">Skip Curse (-1 Coin)</button>
+      <button class="menu-btn" id="opt-out-btn" onclick="optOutCurse()">Bypass Curse (-1 Coin)</button>
     </div>
 
-    <!-- Game Over Screen -->
+    <!-- Secret Admin Modal -->
+    <div id="admin-modal" class="overlay hidden">
+      <h2>Admin Panel</h2>
+      <div class="admin-grid">
+        <div class="admin-card">
+          <label>Set Coins</label>
+          <input type="number" id="admin-coins-input" value="100">
+          <button class="menu-btn" onclick="adminSetCoins()">Set Coins</button>
+        </div>
+        <div class="admin-card">
+          <label>Set High Score</label>
+          <input type="number" id="admin-score-input" value="1000">
+          <button class="menu-btn" onclick="adminSetScore()">Set Score</button>
+        </div>
+      </div>
+      <button class="menu-btn" onclick="adminResetProgress()">Reset Progress</button>
+      <button class="menu-btn" onclick="closeAdmin()">Close</button>
+    </div>
+
+    <!-- Game Over -->
     <div id="game-over" class="overlay hidden">
       <h2 style="color: #e74c3c;">Game Over</h2>
-      <p style="margin-bottom: 15px;">Final Score: <span id="final-score">0</span></p>
+      <p style="margin-bottom: 8px;">Score: <span id="final-score" style="color:#fff;">0</span></p>
+      <p style="margin-bottom: 15px;">High Score: <span id="final-high-score" style="color:#f1c40f;">0</span></p>
       <button class="menu-btn" onclick="startGame()">Play Again</button>
       <button class="menu-btn" onclick="showMainMenu()">Main Menu</button>
     </div>
@@ -318,150 +353,126 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // UI Elements
     const mainMenu = document.getElementById('main-menu');
     const shopMenu = document.getElementById('shop-menu');
     const curseModal = document.getElementById('curse-modal');
+    const adminModal = document.getElementById('admin-modal');
     const gameOverMenu = document.getElementById('game-over');
     const cardsWrapper = document.getElementById('cards-wrapper');
     const optOutBtn = document.getElementById('opt-out-btn');
     const shopCoinsText = document.getElementById('shop-coins');
-    const finalScoreText = document.getElementById('final-score');
+    const menuHighScoreText = document.getElementById('menu-high-score');
 
-    const abilitiesPanel = document.getElementById('abilities-panel');
-    const skinsPanel = document.getElementById('skins-panel');
-    const tabAbilities = document.getElementById('tab-abilities');
-    const tabSkins = document.getElementById('tab-skins');
-
-    // Game Core State
     let gameRunning = false;
     let score = 0;
-    let coins = 0;
+    let highScore = parseInt(localStorage.getItem('stickman_high_score')) || 0;
+    let coins = parseInt(localStorage.getItem('stickman_coins')) || 0;
 
     // Curses Tracker
     let nextCurseScore = 800;
     let activeCurse = null;
     let curseEndScore = 0;
 
-    // Upgrades / Abilities System
+    // Abilities
     const abilities = {
-      shield: false,
-      magnet: false,
-      dash: false
+      hacker: parseInt(localStorage.getItem('ability_hacker')) || 0,
+      magnet: localStorage.getItem('ability_magnet') === 'true',
+      slime: localStorage.getItem('ability_slime') === 'true',
+      medic: localStorage.getItem('ability_medic') === 'true'
     };
 
-    let shieldActive = false;
-    let dashCooldown = 0;
+    let medicAvailable = false;
+    let hackerCooldown = 0;
 
-    // Skins System
-    const ownedSkins = {
+    // Skins
+    const ownedSkins = JSON.parse(localStorage.getItem('stickman_owned_skins')) || {
       default: true,
-      cyan: false,
-      purple: false,
+      pirate: false,
+      robot: false,
+      alien: false,
       gold: false
     };
 
+    let selectedSkin = localStorage.getItem('stickman_selected_skin') || 'default';
+
     const skinColors = {
       default: '#ffffff',
-      cyan: '#00ffff',
-      purple: '#a855f7',
-      gold: '#eab308'
+      pirate: '#e74c3c',
+      robot: '#95a5a6',
+      alien: '#2ecc71',
+      gold: '#f1c40f'
     };
 
-    let selectedSkin = 'default';
-
-    // Entities
+    // World & Physics
+    const groundY = 350;
     let obstacles = [];
     let coinItems = [];
-    let visualEffects = [];
+    let slimeTrails = [];
     let spawnTimer = 0;
-    let coinSpawnTimer = 0;
 
-    // Player Object
-    const groundY = 350;
     const player = {
       x: 80,
       y: 300,
       width: 20,
       height: 50,
+      normalHeight: 50,
+      duckHeight: 25,
       velocityY: 0,
-      gravity: 0.8,
-      jumpPower: -13,
-      isGrounded: true
+      gravity: 0.85,
+      jumpPower: -13.5,
+      isGrounded: true,
+      isDucking: false
     };
 
-    // Curses Definitions
+    // Curses List
     const CURSES = [
       {
         id: 'easy_coins',
         tier: 'easy',
         name: 'Coin Drought',
-        desc: 'Coins spawn at a much lower rate.',
-        reward: 0,
-        effect: 'green_mist'
+        desc: 'Coins spawn far less frequently.',
+        reward: 1
       },
       {
-        id: 'easy_shrink_score',
-        tier: 'easy',
-        name: 'Score Shrink',
-        desc: 'Loses 50-1000 score immediately upon selection.',
-        reward: 0,
-        effect: 'green_mist',
-        onSelect: () => {
-          const reduction = Math.floor(Math.random() * 951) + 50;
-          score = Math.max(0, score - reduction);
-        }
-      },
-      {
-        id: 'medium_traps',
+        id: 'medium_speed',
         tier: 'medium',
-        name: 'Hidden Traps',
-        desc: 'Traps blend into ground and snap up when near.',
-        reward: 2,
-        effect: 'flames'
-      },
-      {
-        id: 'medium_cooldown',
-        tier: 'medium',
-        name: 'Sluggish Magic',
-        desc: '50% longer cooldown for abilities.',
-        reward: 2,
-        effect: 'flames'
-      },
-      {
-        id: 'medium_big_obstacles',
-        tier: 'medium',
-        name: 'Gigantism',
-        desc: 'Ground obstacles are significantly larger.',
-        reward: 2,
-        effect: 'flames'
-      },
-      {
-        id: 'medium_no_pickups',
-        tier: 'medium',
-        name: 'Barren Wasteland',
-        desc: 'Coins and hearts will not spawn.',
-        reward: 2,
-        effect: 'flames'
+        name: 'Speed Surge',
+        desc: 'Obstacles move significantly faster.',
+        reward: 3
       },
       {
         id: 'hard_no_abilities',
         tier: 'hard',
-        name: 'Power Block',
-        desc: 'Abilities are completely disabled.',
-        reward: 5,
-        effect: 'red_lightning'
+        name: 'Power Nullifier',
+        desc: 'All abilities are temporarily disabled.',
+        reward: 6
       }
     ];
 
-    // Key Inputs
+    // Key Listeners
     window.addEventListener('keydown', (e) => {
+      // Secret Admin Panel Shortcut: Shift + P (Passcode: "bub")
+      if (e.shiftKey && (e.code === 'KeyP' || e.key === 'P')) {
+        openAdminPrompt();
+        return;
+      }
+
       if (!gameRunning) return;
 
-      if (e.code === 'Space' || e.code === 'ArrowUp') {
+      if ((e.code === 'Space' || e.code === 'ArrowUp')) {
         jump();
-      } else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-        useDash();
+      }
+      if ((e.code === 'KeyS' || e.code === 'ArrowDown')) {
+        startDuck();
+      }
+      if (e.code === 'KeyE') {
+        useHackerAbility();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+        stopDuck();
       }
     });
 
@@ -469,30 +480,55 @@
       if (player.isGrounded) {
         player.velocityY = player.jumpPower;
         player.isGrounded = false;
+        if (player.isDucking) stopDuck();
       }
     }
 
-    function useDash() {
-      // Hard curse disables abilities
+    function startDuck() {
+      if (player.isGrounded) {
+        player.isDucking = true;
+        player.height = player.duckHeight;
+        player.y = groundY - player.duckHeight;
+      }
+    }
+
+    function stopDuck() {
+      player.isDucking = false;
+      player.height = player.normalHeight;
+      if (player.isGrounded) {
+        player.y = groundY - player.normalHeight;
+      }
+    }
+
+    function useHackerAbility() {
       if (activeCurse?.id === 'hard_no_abilities') return;
-
-      if (abilities.dash && dashCooldown <= 0) {
-        player.x += 60;
-        if (player.x > canvas.width - player.width) {
-          player.x = canvas.width - player.width;
-        }
-
-        // Apply 50% longer cooldown if medium_cooldown curse is active
-        let cooldownTime = activeCurse?.id === 'medium_cooldown' ? 180 : 120;
-        dashCooldown = cooldownTime;
+      if (abilities.hacker > 0 && hackerCooldown <= 0) {
+        obstacles.forEach(obs => {
+          coinItems.push({ x: obs.x, y: obs.y, radius: 8 });
+        });
+        obstacles = [];
+        hackerCooldown = 300 - (abilities.hacker * 50);
       }
     }
 
-    // Navigation & UI Flow
+    function saveData() {
+      localStorage.setItem('stickman_high_score', highScore);
+      localStorage.setItem('stickman_coins', coins);
+      localStorage.setItem('ability_hacker', abilities.hacker);
+      localStorage.setItem('ability_magnet', abilities.magnet);
+      localStorage.setItem('ability_slime', abilities.slime);
+      localStorage.setItem('ability_medic', abilities.medic);
+      localStorage.setItem('stickman_owned_skins', JSON.stringify(ownedSkins));
+      localStorage.setItem('stickman_selected_skin', selectedSkin);
+    }
+
     function showMainMenu() {
       gameRunning = false;
+      menuHighScoreText.textContent = highScore;
       gameOverMenu.classList.add('hidden');
       shopMenu.classList.add('hidden');
+      adminModal.classList.add('hidden');
+      curseModal.classList.add('hidden');
       mainMenu.classList.remove('hidden');
     }
 
@@ -510,47 +546,60 @@
 
     function switchShopTab(tab) {
       if (tab === 'abilities') {
-        abilitiesPanel.classList.remove('hidden');
-        skinsPanel.classList.add('hidden');
-        tabAbilities.classList.add('active');
-        tabSkins.classList.remove('active');
+        document.getElementById('abilities-panel').classList.remove('hidden');
+        document.getElementById('skins-panel').classList.add('hidden');
+        document.getElementById('tab-abilities').classList.add('active');
+        document.getElementById('tab-skins').classList.remove('active');
       } else {
-        abilitiesPanel.classList.add('hidden');
-        skinsPanel.classList.remove('hidden');
-        tabAbilities.classList.remove('active');
-        tabSkins.classList.add('active');
+        document.getElementById('abilities-panel').classList.add('hidden');
+        document.getElementById('skins-panel').classList.remove('hidden');
+        document.getElementById('tab-abilities').classList.remove('active');
+        document.getElementById('tab-skins').classList.add('active');
       }
     }
 
-    function buyAbility(abilityKey, cost) {
-      if (coins >= cost && !abilities[abilityKey]) {
+    function buyAbility(key, cost) {
+      if (key === 'hacker') {
+        if (abilities.hacker < 3 && coins >= cost) {
+          coins -= cost;
+          abilities.hacker++;
+          saveData();
+          shopCoinsText.textContent = coins;
+          updateShopUI();
+        }
+      } else {
+        if (coins >= cost && !abilities[key]) {
+          coins -= cost;
+          abilities[key] = true;
+          saveData();
+          shopCoinsText.textContent = coins;
+          updateShopUI();
+        }
+      }
+    }
+
+    function buySkin(key, cost, reqScore) {
+      if (highScore < reqScore) return;
+      if (coins >= cost && !ownedSkins[key]) {
         coins -= cost;
-        abilities[abilityKey] = true;
+        ownedSkins[key] = true;
+        selectedSkin = key;
+        saveData();
         shopCoinsText.textContent = coins;
         updateShopUI();
       }
     }
 
-    function buySkin(skinKey, cost) {
-      if (coins >= cost && !ownedSkins[skinKey]) {
-        coins -= cost;
-        ownedSkins[skinKey] = true;
-        selectedSkin = skinKey;
-        shopCoinsText.textContent = coins;
-        updateShopUI();
-      }
-    }
-
-    function selectSkin(skinKey) {
-      if (ownedSkins[skinKey]) {
-        selectedSkin = skinKey;
+    function selectSkin(key) {
+      if (ownedSkins[key]) {
+        selectedSkin = key;
+        saveData();
         updateShopUI();
       }
     }
 
     function updateShopUI() {
-      // Ability Buttons
-      ['shield', 'magnet', 'dash'].forEach(ab => {
+      ['magnet', 'slime', 'medic'].forEach(ab => {
         const btn = document.getElementById(`btn-${ab}`);
         if (btn) {
           if (abilities[ab]) {
@@ -562,8 +611,7 @@
         }
       });
 
-      // Skin Buttons
-      ['default', 'cyan', 'purple', 'gold'].forEach(sk => {
+      ['default', 'pirate', 'robot', 'alien', 'gold'].forEach(sk => {
         const btn = document.getElementById(`btn-skin-${sk}`);
         if (btn) {
           if (selectedSkin === sk) {
@@ -572,11 +620,44 @@
           } else if (ownedSkins[sk]) {
             btn.textContent = 'Equip';
             btn.disabled = false;
-          } else {
-            btn.disabled = false;
           }
         }
       });
+    }
+
+    // Secret Admin Handler ("bub")
+    function openAdminPrompt() {
+      const pass = prompt("Enter Admin Passcode:");
+      if (pass === "bub") {
+        gameRunning = false;
+        adminModal.classList.remove('hidden');
+      } else if (pass !== null) {
+        alert("Incorrect Passcode!");
+      }
+    }
+
+    function closeAdmin() {
+      adminModal.classList.add('hidden');
+      showMainMenu();
+    }
+
+    function adminSetCoins() {
+      coins = parseInt(document.getElementById('admin-coins-input').value) || 0;
+      saveData();
+      alert("Coins updated!");
+    }
+
+    function adminSetScore() {
+      highScore = parseInt(document.getElementById('admin-score-input').value) || 0;
+      saveData();
+      alert("High score updated!");
+    }
+
+    function adminResetProgress() {
+      if (confirm("Reset all coins, scores, and unlocks?")) {
+        localStorage.clear();
+        location.reload();
+      }
     }
 
     function startGame() {
@@ -585,15 +666,16 @@
       activeCurse = null;
       obstacles = [];
       coinItems = [];
-      visualEffects = [];
-      
+      slimeTrails = [];
+
       player.x = 80;
-      player.y = groundY - player.height;
+      player.height = player.normalHeight;
+      player.y = groundY - player.normalHeight;
       player.velocityY = 0;
       player.isGrounded = true;
 
-      shieldActive = abilities.shield;
-      dashCooldown = 0;
+      medicAvailable = abilities.medic;
+      hackerCooldown = 0;
 
       mainMenu.classList.add('hidden');
       gameOverMenu.classList.add('hidden');
@@ -604,18 +686,26 @@
     }
 
     function triggerGameOver() {
+      if (medicAvailable && activeCurse?.id !== 'hard_no_abilities') {
+        medicAvailable = false;
+        obstacles = obstacles.filter(o => o.x > player.x + 200);
+        return;
+      }
+
       gameRunning = false;
-      finalScoreText.textContent = score;
+      if (score > highScore) highScore = score;
+      saveData();
+
+      document.getElementById('final-score').textContent = score;
+      document.getElementById('final-high-score').textContent = highScore;
       gameOverMenu.classList.remove('hidden');
     }
 
-    // Curses Logic
     function checkCurseTrigger() {
       if (score >= nextCurseScore) {
         pauseAndShowCurses();
         nextCurseScore += 800;
       }
-
       if (activeCurse && score >= curseEndScore) {
         activeCurse = null;
       }
@@ -623,12 +713,9 @@
 
     function pauseAndShowCurses() {
       gameRunning = false;
-
-      const shuffled = [...CURSES].sort(() => 0.5 - Math.random());
-      const selectedCurses = shuffled.slice(0, 3);
-
       cardsWrapper.innerHTML = '';
-      selectedCurses.forEach(curse => {
+
+      CURSES.forEach(curse => {
         const card = document.createElement('div');
         card.className = `curse-card ${curse.tier}`;
         card.innerHTML = `
@@ -650,200 +737,84 @@
       activeCurse = curse;
       curseEndScore = score + 500;
       coins += curse.reward;
-
-      if (curse.onSelect) curse.onSelect();
-
-      triggerEffect(curse.effect);
+      saveData();
       resumeFromCurse();
     }
 
     function optOutCurse() {
       if (coins >= 1) {
         coins -= 1;
+        saveData();
         resumeFromCurse();
       }
     }
 
     function resumeFromCurse() {
       obstacles = [];
-      coinItems = [];
-
       curseModal.classList.add('hidden');
       gameRunning = true;
       requestAnimationFrame(gameLoop);
     }
 
-    // Spawning Mechanics
-    function handleSpawns() {
-      spawnTimer++;
-      coinSpawnTimer++;
-
-      if (spawnTimer > 100) {
-        let isTrap = activeCurse?.id === 'medium_traps' && Math.random() < 0.4;
-        let isBig = activeCurse?.id === 'medium_big_obstacles';
-
-        let obsWidth = isBig ? 35 : 20;
-        let obsHeight = isBig ? 65 : 40;
-
-        obstacles.push({
-          x: canvas.width,
-          y: groundY - obsHeight,
-          width: obsWidth,
-          height: obsHeight,
-          isTrap: isTrap,
-          snapped: false
-        });
-
-        spawnTimer = 0;
-      }
-
-      let coinInterval = activeCurse?.id === 'easy_coins' ? 300 : 150;
-      if (coinSpawnTimer > coinInterval) {
-        if (activeCurse?.id !== 'medium_no_pickups') {
-          coinItems.push({
-            x: canvas.width,
-            y: groundY - 60 - Math.random() * 80,
-            radius: 8
-          });
-        }
-        coinSpawnTimer = 0;
-      }
-    }
-
-    // Visual Particle Effects
-    function triggerEffect(type) {
-      if (type === 'green_mist') {
-        for (let i = 0; i < 35; i++) {
-          visualEffects.push({
-            type: 'mist',
-            x: player.x + (Math.random() * 40 - 20),
-            y: player.y + (Math.random() * 50),
-            vx: (Math.random() - 0.5) * 1.5,
-            vy: -Math.random() * 1.5,
-            size: Math.random() * 8 + 4,
-            life: 60,
-            color: `rgba(46, 204, 113, ${Math.random() * 0.6 + 0.2})`
-          });
-        }
-      } else if (type === 'flames') {
-        for (let i = 0; i < 45; i++) {
-          visualEffects.push({
-            type: 'flame',
-            x: player.x + 40 + (Math.random() * 15 - 7),
-            y: groundY - (Math.random() * 10),
-            vx: (Math.random() - 0.5) * 1,
-            vy: -Math.random() * 3 - 1,
-            size: Math.random() * 10 + 5,
-            life: 45,
-            color: Math.random() > 0.5 ? '#f39c12' : '#e67e22'
-          });
-        }
-      } else if (type === 'red_lightning') {
-        visualEffects.push({
-          type: 'lightning',
-          x: player.x + 40,
-          life: 15
-        });
-      }
-    }
-
-    function renderEffects() {
-      for (let i = visualEffects.length - 1; i >= 0; i--) {
-        const p = visualEffects[i];
-
-        if (p.type === 'mist' || p.type === 'flame') {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.life--;
-
-          ctx.fillStyle = p.color;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-
-          if (p.type === 'flame') p.size = Math.max(0, p.size - 0.2);
-        } else if (p.type === 'lightning') {
-          p.life--;
-          ctx.strokeStyle = '#e74c3c';
-          ctx.lineWidth = 4;
-          ctx.beginPath();
-          ctx.moveTo(p.x, 0);
-
-          let currentY = 0;
-          let currentX = p.x;
-          while (currentY < groundY) {
-            currentY += 20;
-            currentX += (Math.random() - 0.5) * 30;
-            ctx.lineTo(currentX, currentY);
-          }
-          ctx.stroke();
-        }
-
-        if (p.life <= 0) visualEffects.splice(i, 1);
-      }
-    }
-
-    // Main Game Loop
     function gameLoop() {
       if (!gameRunning) return;
 
-      if (dashCooldown > 0) dashCooldown--;
+      if (hackerCooldown > 0) hackerCooldown--;
 
-      // Background Clear (Black)
+      // Clear Screen (Black)
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Score & Spawns
       score++;
       checkCurseTrigger();
-      handleSpawns();
 
-      // Physics Calculation
+      // Spawn Obstacles
+      spawnTimer++;
+      if (spawnTimer > 100) {
+        let isAirborne = Math.random() < 0.2;
+        obstacles.push({
+          x: canvas.width,
+          y: isAirborne ? groundY - 70 : groundY - 40,
+          width: 20,
+          height: 40
+        });
+
+        if (Math.random() < 0.5) {
+          coinItems.push({
+            x: canvas.width + 10,
+            y: groundY - 60 - Math.random() * 40,
+            radius: 8
+          });
+        }
+        spawnTimer = 0;
+      }
+
+      // Physics
       player.velocityY += player.gravity;
       player.y += player.velocityY;
 
-      if (player.y + player.height >= groundY) {
+      if (player.y >= groundY - player.height) {
         player.y = groundY - player.height;
         player.velocityY = 0;
         player.isGrounded = true;
       }
 
-      // Slowly pull player back to x=80 if dashed
-      if (player.x > 80) player.x -= 1;
-
-      // Draw Ground (Gray)
+      // Ground (Gray)
       ctx.fillStyle = '#888888';
       ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
 
-      // Draw Player (Using Selected Skin)
+      // Player Skin
       ctx.fillStyle = skinColors[selectedSkin] || '#ffffff';
       ctx.fillRect(player.x, player.y, player.width, player.height);
 
-      // Render Shield Visual
-      if (shieldActive) {
-        ctx.strokeStyle = '#3498db';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(player.x + player.width/2, player.y + player.height/2, 32, 0, Math.PI*2);
-        ctx.stroke();
-      }
-
-      // Draw & Update Obstacles (Red)
+      // Move & Render Obstacles (Red)
+      let obsSpeed = activeCurse?.id === 'medium_speed' ? 8 : 5;
       for (let i = obstacles.length - 1; i >= 0; i--) {
         let obs = obstacles[i];
-        obs.x -= 5;
-
-        if (obs.isTrap && Math.abs(obs.x - player.x) < 80) {
-          obs.snapped = true;
-        }
+        obs.x -= obsSpeed;
 
         ctx.fillStyle = '#ff0000';
-        if (obs.isTrap && !obs.snapped) {
-          ctx.fillStyle = '#333333';
-          ctx.fillRect(obs.x, groundY - 4, obs.width, 4);
-        } else {
-          ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-        }
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
 
         // Collision Check
         if (
@@ -852,27 +823,21 @@
           player.y < obs.y + obs.height &&
           player.y + player.height > obs.y
         ) {
-          if (shieldActive) {
-            shieldActive = false; // Shield absorbs the hit
-            obstacles.splice(i, 1);
-          } else {
-            triggerGameOver();
-            return;
-          }
+          triggerGameOver();
+          return;
         }
 
         if (obs.x + obs.width < 0) obstacles.splice(i, 1);
       }
 
-      // Draw & Collect Coins
+      // Coins (Gold)
       for (let i = coinItems.length - 1; i >= 0; i--) {
         let c = coinItems[i];
-        c.x -= 5;
+        c.x -= obsSpeed;
 
-        // Coin Magnet Ability Logic
         if (abilities.magnet && activeCurse?.id !== 'hard_no_abilities') {
-          let dx = (player.x + player.width/2) - c.x;
-          let dy = (player.y + player.height/2) - c.y;
+          let dx = (player.x + player.width / 2) - c.x;
+          let dy = (player.y + player.height / 2) - c.y;
           let dist = Math.hypot(dx, dy);
           if (dist < 150) {
             c.x += (dx / dist) * 4;
@@ -885,31 +850,30 @@
         ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        let dist = Math.hypot(player.x + player.width/2 - c.x, player.y + player.height/2 - c.y);
-        if (dist < player.width/2 + c.radius) {
+        let dist = Math.hypot(
+          player.x + player.width / 2 - c.x,
+          player.y + player.height / 2 - c.y
+        );
+
+        if (dist < player.width / 2 + c.radius) {
           coins++;
+          saveData();
           coinItems.splice(i, 1);
-        } else if (c.x + c.radius < 0) {
+        } else if (c.x < 0) {
           coinItems.splice(i, 1);
         }
       }
 
-      // Render Visual Particle Effects
-      renderEffects();
-
-      // Render HUD
+      // HUD
       ctx.fillStyle = '#ffffff';
-      ctx.font = '16px sans-serif';
+      ctx.font = '15px sans-serif';
       ctx.fillText(`Score: ${score}`, 20, 30);
-      ctx.fillText(`Coins: ${coins}`, 20, 55);
-
-      if (activeCurse) {
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillText(`CURSE: ${activeCurse.name} (${curseEndScore - score} left)`, 20, 85);
-      }
+      ctx.fillText(`Coins: ${coins}`, 20, 52);
 
       requestAnimationFrame(gameLoop);
     }
+
+    showMainMenu();
   </script>
 </body>
 </html>
