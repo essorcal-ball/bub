@@ -183,7 +183,7 @@
         <!-- Stickman Jump Hub Menu -->
         <div id="hub-screen" class="ui-screen">
             <h1>STICKMAN JUMP</h1>
-            <p>Press <b>SPACE</b>/<b>CLICK</b> to jump | Press <b>E</b> for Ability</p>
+            <p><b>SPACE / UP:</b> Jump &nbsp;|&nbsp; <b>S / DOWN:</b> Duck &nbsp;|&nbsp; <b>E:</b> Ability</p>
             <p id="hub-highscore" style="color: #00e676; margin-top: 8px;">High Score: 0</p>
             <p id="hub-coins" style="color: #ffd700;">Total Coins: 0</p>
             <div class="btn-group">
@@ -270,7 +270,6 @@
         const GOLD_COIN = '#ffd700';
         const GRAY_GROUND = '#555555';
         const WHITE_STICKMAN = '#ffffff';
-        const PURPLE_HACKER = '#c0392b';
 
         // Saved Data (LocalStorage)
         let totalCoins = parseInt(localStorage.getItem('stickman_coins')) || 0;
@@ -278,7 +277,7 @@
         let hackerLevel = parseInt(localStorage.getItem('stickman_hacker_lvl')) || 0;
 
         // Game State Variables
-        let gameState = 'HUB'; // 'HUB', 'PLAYING', 'SHOP', 'GAMEOVER'
+        let gameState = 'HUB';
         let score = 0;
         let gameSpeed = 5;
         let obstacles = [];
@@ -286,13 +285,14 @@
         let spawnTimer = 0;
         let coinSpawnTimer = 0;
         let nextSpawnInterval = 100;
-        let nextCoinInterval = 120;
+        let nextCoinInterval = 300;
         let spawnPausedTimer = 0;
 
         // Ability States
-        let abilityCooldown = 0; // Cooldown timer in frames
-        let hackerLvl3Timer = 0; // Duration timer in frames for Lvl 3 invincibility
-        let lagAnimationTimer = 0; // Duration timer for post-invincibility flash lag
+        let abilityCooldown = 0;
+        let hackerLvl3Timer = 0;
+        let lagAnimationTimer = 0;
+        let hackerCharges = 0;
 
         // Save progress function
         function saveGameData() {
@@ -308,18 +308,31 @@
             vy: 0,
             radius: 12,
             height: 50,
+            isDucking: false,
             isGrounded: true,
 
             reset() {
                 this.y = GROUND_Y;
                 this.vy = 0;
+                this.height = 50;
+                this.isDucking = false;
                 this.isGrounded = true;
             },
 
             jump() {
-                if (this.isGrounded) {
+                if (this.isGrounded && !this.isDucking) {
                     this.vy = JUMP_FORCE;
                     this.isGrounded = false;
+                }
+            },
+
+            duck(shouldDuck) {
+                if (shouldDuck) {
+                    this.isDucking = true;
+                    this.height = 25; // Lower posture when crouching
+                } else {
+                    this.isDucking = false;
+                    this.height = 50; // Normal posture
                 }
             },
 
@@ -337,20 +350,18 @@
             draw() {
                 const headY = this.y - this.height;
 
-                // Color based on Level 3 Glitch state
                 let color = WHITE_STICKMAN;
                 let strokeWidth = 3;
 
                 if (hackerLvl3Timer > 0) {
-                    color = '#b000ff'; // Purple
-                    strokeWidth = Math.random() < 0.3 ? 5 : 3; // Glitch width jitter
+                    color = '#b000ff';
+                    strokeWidth = Math.random() < 0.3 ? 5 : 3;
                 }
 
                 ctx.strokeStyle = color;
                 ctx.lineWidth = strokeWidth;
                 ctx.lineCap = 'round';
 
-                // Glitch offset jitter for Lvl 3
                 let offsetX = (hackerLvl3Timer > 0 && Math.random() < 0.4) ? (Math.random() * 6 - 3) : 0;
 
                 // Head
@@ -358,35 +369,56 @@
                 ctx.arc(this.x + offsetX, headY, this.radius, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // Body
-                ctx.beginPath();
-                ctx.moveTo(this.x + offsetX, headY + this.radius);
-                ctx.lineTo(this.x + offsetX, this.y - 15);
-                ctx.stroke();
+                if (this.isDucking && this.isGrounded) {
+                    // Crouched Body
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, headY + this.radius);
+                    ctx.lineTo(this.x - 8 + offsetX, this.y - 10);
+                    ctx.stroke();
 
-                // Legs
-                ctx.beginPath();
-                ctx.moveTo(this.x + offsetX, this.y - 15);
-                ctx.lineTo(this.x - 10 + offsetX, this.y);
-                ctx.moveTo(this.x + offsetX, this.y - 15);
-                ctx.lineTo(this.x + 10 + offsetX, this.y);
-                ctx.stroke();
+                    // Crouched Legs
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - 8 + offsetX, this.y - 10);
+                    ctx.lineTo(this.x - 18 + offsetX, this.y);
+                    ctx.moveTo(this.x - 8 + offsetX, this.y - 10);
+                    ctx.lineTo(this.x + 8 + offsetX, this.y);
+                    ctx.stroke();
 
-                // Arms
-                ctx.beginPath();
-                const armY = headY + this.radius + 10;
-                if (!this.isGrounded) {
-                    ctx.moveTo(this.x - 12 + offsetX, armY - 8);
-                    ctx.lineTo(this.x + offsetX, armY);
-                    ctx.lineTo(this.x + 12 + offsetX, armY - 8);
+                    // Crouched Arms
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, headY + this.radius + 4);
+                    ctx.lineTo(this.x + 10 + offsetX, headY + this.radius + 12);
+                    ctx.stroke();
                 } else {
-                    ctx.moveTo(this.x - 10 + offsetX, armY + 5);
-                    ctx.lineTo(this.x + offsetX, armY);
-                    ctx.lineTo(this.x + 10 + offsetX, armY + 5);
-                }
-                ctx.stroke();
+                    // Normal Standing Body
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, headY + this.radius);
+                    ctx.lineTo(this.x + offsetX, this.y - 15);
+                    ctx.stroke();
 
-                // Glitch Artifact Lines
+                    // Legs
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offsetX, this.y - 15);
+                    ctx.lineTo(this.x - 10 + offsetX, this.y);
+                    ctx.moveTo(this.x + offsetX, this.y - 15);
+                    ctx.lineTo(this.x + 10 + offsetX, this.y);
+                    ctx.stroke();
+
+                    // Arms
+                    ctx.beginPath();
+                    const armY = headY + this.radius + 10;
+                    if (!this.isGrounded) {
+                        ctx.moveTo(this.x - 12 + offsetX, armY - 8);
+                        ctx.lineTo(this.x + offsetX, armY);
+                        ctx.lineTo(this.x + 12 + offsetX, armY - 8);
+                    } else {
+                        ctx.moveTo(this.x - 10 + offsetX, armY + 5);
+                        ctx.lineTo(this.x + offsetX, armY);
+                        ctx.lineTo(this.x + 10 + offsetX, armY + 5);
+                    }
+                    ctx.stroke();
+                }
+
                 if (hackerLvl3Timer > 0 && Math.random() < 0.5) {
                     ctx.strokeStyle = '#00ffff';
                     ctx.lineWidth = 1;
@@ -405,19 +437,22 @@
             if (gameState !== 'PLAYING' || hackerLevel === 0 || abilityCooldown > 0) return;
 
             if (hackerLevel === 1) {
-                // Turn 1 nearest obstacle green
                 let nearest = getUpcomingObstacles(1);
                 nearest.forEach(obs => obs.hacked = true);
-                abilityCooldown = 6.5 * 60; // 6.5 seconds in frames
+                abilityCooldown = 6.5 * 60;
             } else if (hackerLevel === 2) {
-                // Turn 3 nearest obstacles green
+                hackerCharges = 3;
                 let nearest = getUpcomingObstacles(3);
-                nearest.forEach(obs => obs.hacked = true);
-                abilityCooldown = 8.0 * 60; // 8.0 seconds in frames
+                nearest.forEach(obs => {
+                    if (hackerCharges > 0 && !obs.hacked) {
+                        obs.hacked = true;
+                        hackerCharges--;
+                    }
+                });
+                abilityCooldown = 8.0 * 60;
             } else if (hackerLevel === 3) {
-                // Invincibility mode for 9 seconds
                 hackerLvl3Timer = 9.0 * 60;
-                abilityCooldown = 13.0 * 60; // 13.0 seconds in frames
+                abilityCooldown = 13.0 * 60;
             }
         }
 
@@ -434,9 +469,19 @@
                 e.preventDefault();
                 if (gameState === 'PLAYING') player.jump();
             }
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+                e.preventDefault();
+                if (gameState === 'PLAYING') player.duck(true);
+            }
             if (e.code === 'KeyE') {
                 e.preventDefault();
                 activateAbility();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+                if (gameState === 'PLAYING') player.duck(false);
             }
         });
 
@@ -464,11 +509,11 @@
                 buyHackerBtn.disabled = totalCoins < 10;
             } else if (hackerLevel === 1) {
                 hackerCurrentDesc.innerHTML = `<b>Current (Lvl 1):</b> Hacks 1 obstacle green on activation. (CD: 6.5s)`;
-                hackerNextDesc.innerHTML = `<b>Next Level:</b> Hacker Lvl 2 (CD: 8.0s)<br>Hacks 3 nearest obstacles green & pass through.`;
+                hackerNextDesc.innerHTML = `<b>Next Level:</b> Hacker Lvl 2 (CD: 8.0s)<br>Hacks the NEXT 3 obstacles green, even if offscreen!`;
                 buyHackerBtn.textContent = `Upgrade Lvl 2 (35 Coins)`;
                 buyHackerBtn.disabled = totalCoins < 35;
             } else if (hackerLevel === 2) {
-                hackerCurrentDesc.innerHTML = `<b>Current (Lvl 2):</b> Hacks 3 obstacles green on activation. (CD: 8.0s)`;
+                hackerCurrentDesc.innerHTML = `<b>Current (Lvl 2):</b> Hacks the next 3 obstacles green & passible! (CD: 8.0s)`;
                 hackerNextDesc.innerHTML = `<b>Next Level:</b> Hacker Lvl 3 (CD: 13.0s)<br>Invincibility mode for 9 seconds, then clears screen with purple lag effect!`;
                 buyHackerBtn.textContent = `Upgrade Lvl 3 (100 Coins)`;
                 buyHackerBtn.disabled = totalCoins < 100;
@@ -549,36 +594,42 @@
             coinSpawnTimer = 0;
             spawnPausedTimer = 0;
             nextSpawnInterval = 80;
-            nextCoinInterval = 100;
+            nextCoinInterval = 250 + Math.floor(Math.random() * 200);
             abilityCooldown = 0;
             hackerLvl3Timer = 0;
             lagAnimationTimer = 0;
+            hackerCharges = 0;
             player.reset();
         }
 
         function spawnObstacle() {
-            if (spawnPausedTimer > 0) return; // Paused during Lvl 3 startup recovery
+            if (spawnPausedTimer > 0) return;
 
             const allowFlying = score >= 150;
             const isFlying = allowFlying && Math.random() < 0.35;
+            const sizeScale = Math.min(1.4, 1 + score / 1200);
 
-            // Difficulty Multiplier scaling size based on score
-            const sizeScale = Math.min(1.8, 1 + score / 800); 
+            let isHacked = false;
+            if (hackerCharges > 0) {
+                isHacked = true;
+                hackerCharges--;
+            }
 
             if (isFlying) {
-                const width = Math.floor((Math.random() * 35 + 40) * sizeScale);
-                const height = Math.floor(25 * sizeScale);
-                const y = GROUND_Y - 95;
+                const width = Math.floor((Math.random() * 30 + 35) * sizeScale);
+                const height = 22;
+                // Can spawn lower now (Y: 240 - 275) -> Ducking cleanly passes underneath!
+                const y = GROUND_Y - Math.floor(Math.random() * 35 + 45); 
 
-                obstacles.push({ x: canvas.width, y, width, height, hacked: false });
+                obstacles.push({ x: canvas.width, y, width, height, hacked: isHacked });
             } else {
-                const width = Math.floor((Math.random() * 90 + 30) * sizeScale);
+                const width = Math.min(110, Math.floor((Math.random() * 70 + 30) * sizeScale));
                 
                 let height;
-                if (width > 80) {
-                    height = Math.floor((Math.random() * 15 + 25) * sizeScale); // Wide & Jumpable
+                if (width > 75) {
+                    height = Math.floor((Math.random() * 12 + 22) * sizeScale);
                 } else {
-                    height = Math.floor((Math.random() * 50 + 30) * sizeScale); // Taller
+                    height = Math.min(52, Math.floor((Math.random() * 35 + 25) * sizeScale));
                 }
 
                 obstacles.push({
@@ -586,14 +637,14 @@
                     y: GROUND_Y - height,
                     width,
                     height,
-                    hacked: false
+                    hacked: isHacked
                 });
             }
         }
 
         function spawnCoin() {
             const isAirCoin = Math.random() < 0.6; 
-            const y = isAirCoin ? GROUND_Y - Math.floor(Math.random() * 60 + 60) : GROUND_Y - 20;
+            const y = isAirCoin ? GROUND_Y - Math.floor(Math.random() * 50 + 60) : GROUND_Y - 20;
 
             coins.push({
                 x: canvas.width,
@@ -603,7 +654,7 @@
         }
 
         function checkCollision(player, obs) {
-            if (obs.hacked || hackerLvl3Timer > 0) return false; // Ignore collision if hacked or invulnerable
+            if (obs.hacked || hackerLvl3Timer > 0) return false;
 
             const playerLeft = player.x - 10;
             const playerRight = player.x + 10;
@@ -657,21 +708,18 @@
             drawEnvironment();
 
             if (gameState === 'PLAYING') {
-                // Faster difficulty scaling speed
-                gameSpeed += 0.0025; 
+                gameSpeed += 0.0022; 
                 score += gameSpeed * 0.05;
 
-                // Handle Timers
                 if (abilityCooldown > 0) abilityCooldown--;
                 if (spawnPausedTimer > 0) spawnPausedTimer--;
 
                 if (hackerLvl3Timer > 0) {
                     hackerLvl3Timer--;
-                    // End of Invincibility trigger (purple lag/blur clear screen)
                     if (hackerLvl3Timer === 0) {
-                        lagAnimationTimer = 40; // Play purple lag animation for 40 frames
-                        obstacles = []; // Destroy all obstacles
-                        spawnPausedTimer = 150; // Pause new spawns for ~2.5 seconds
+                        lagAnimationTimer = 40;
+                        obstacles = [];
+                        spawnPausedTimer = 150;
                     }
                 }
 
@@ -690,11 +738,9 @@
                     const obs = obstacles[i];
                     obs.x -= gameSpeed;
 
-                    // Draw Obstacle (Green if hacked, Red if regular)
                     ctx.fillStyle = obs.hacked ? GREEN_HACKED : RED_OBSTACLE;
                     ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
 
-                    // Add hack outline if hacked
                     if (obs.hacked) {
                         ctx.strokeStyle = '#ffffff';
                         ctx.lineWidth = 1.5;
@@ -715,7 +761,7 @@
                 if (coinSpawnTimer >= nextCoinInterval) {
                     spawnCoin();
                     coinSpawnTimer = 0;
-                    nextCoinInterval = Math.floor(Math.random() * 80 + 100);
+                    nextCoinInterval = Math.floor(Math.random() * 200 + 300);
                 }
 
                 for (let i = coins.length - 1; i >= 0; i--) {
@@ -748,7 +794,6 @@
                     ctx.fillStyle = `rgba(176, 0, 255, ${lagAnimationTimer / 40 * 0.4})`;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                    // Glitch noise bars
                     ctx.fillStyle = '#00ffff';
                     ctx.fillRect(0, Math.random() * canvas.height, canvas.width, Math.random() * 10 + 2);
                 }
