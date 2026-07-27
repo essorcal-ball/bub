@@ -235,6 +235,7 @@
         .shop-card.magnet { border-color: #ff3366; }
         .shop-card.slime { border-color: #00ffaa; }
         .shop-card.medic { border-color: #ff3333; }
+        .shop-card.wizard { border-color: #aa00ff; }
 
         .shop-card.skin-default { border-color: #ffffff; }
         .shop-card.skin-green { border-color: #00ff66; }
@@ -339,28 +340,39 @@
         <div id="curse-screen" class="ui-screen hidden">
             <div class="curse-panel">
                 <h3 style="color: #b000ff;">🔮 THE ALTAR OF CURSES</h3>
-                <p style="font-size: 0.95rem; margin-bottom: 10px;">Reached a milestone! Choose a curse to proceed:</p>
-                <div class="curse-options">
+                <p id="curse-subtitle" style="font-size: 0.95rem; margin-bottom: 10px;">Reached a milestone! Choose a curse to proceed:</p>
+                
+                <!-- Wizard Lvl 2 Modifier Choice View -->
+                <div id="wizard-modifier-container" class="hidden" style="margin-bottom: 15px;">
+                    <p style="color: #aa00ff; font-weight: bold; margin-bottom: 8px;">🪄 Wizard Modifier Ready: Choose Your Effect</p>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <button class="secondary" onclick="applyWizardModifier('higher_reward')" style="background: #2a1144; border: 1px solid #aa00ff;">✨ Higher Reward (+1 Coin)</button>
+                        <button class="secondary" onclick="applyWizardModifier('opt_out')" style="background: #11442a; border: 1px solid #00ff66;">🟢 Free Opt Out</button>
+                        <button class="secondary" onclick="applyWizardModifier('faster_curse')" style="background: #441111; border: 1px solid #ff2222;">⚡ Faster Curse (+150 Speed)</button>
+                    </div>
+                </div>
+
+                <div id="curse-options-wrapper" class="curse-options">
                     <div class="curse-card easy" onclick="selectCurse('easy')">
                         <div>
-                            <h4 style="color: #00ff66;">🟢 Easy Mist Curse</h4>
+                            <h4 id="easy-title" style="color: #00ff66;">🟢 Easy Mist Curse</h4>
                             <p style="font-size: 0.8rem; margin:0;">Green Mist: -20% Coin spawn rate for 500 pts.</p>
                         </div>
-                        <span style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+0 Coins</span>
+                        <span id="easy-reward" style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+0 Coins</span>
                     </div>
                     <div class="curse-card medium" onclick="selectCurse('medium')">
                         <div>
-                            <h4 style="color: #ffaa00;">🔥 Flame Heat Curse</h4>
+                            <h4 id="medium-title" style="color: #ffaa00;">🔥 Flame Heat Curse</h4>
                             <p style="font-size: 0.8rem; margin:0;">Flame Pop-up: Larger obstacles & slower cooldowns for 500 pts.</p>
                         </div>
-                        <span style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+1 Coin</span>
+                        <span id="medium-reward" style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+1 Coin</span>
                     </div>
                     <div class="curse-card hard" onclick="selectCurse('hard')">
                         <div>
-                            <h4 style="color: #ff2222;">⚡ Lightning Void Curse</h4>
+                            <h4 id="hard-title" style="color: #ff2222;">⚡ Lightning Void Curse</h4>
                             <p style="font-size: 0.8rem; margin:0;">Lightning Strike: Disables all active abilities for 500 pts.</p>
                         </div>
-                        <span style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+2 Coins</span>
+                        <span id="hard-reward" style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+2 Coins</span>
                     </div>
                 </div>
                 <button id="skip-curse-btn" class="secondary" style="width: 100%; font-size: 0.9rem;" onclick="skipCurse()">Skip Curse (Pay 1 Coin)</button>
@@ -430,6 +442,20 @@
                         <div class="card-actions">
                             <button id="buy-medic-btn" class="gold">Buy Lvl 1 (18 Coins)</button>
                             <button id="equip-medic-btn" class="secondary">Equip</button>
+                        </div>
+                    </div>
+
+                    <!-- Wizard Card -->
+                    <div class="shop-card wizard">
+                        <div>
+                            <h3 style="color:#aa00ff;">🧙‍♂️ Wizard</h3>
+                            <div id="wizard-level-text" class="level-badge">Level: 0 / 2</div>
+                            <div id="wizard-current-desc" class="desc-box">Current: Locked</div>
+                            <div id="wizard-next-desc" class="desc-box">Next: Shorten curse duration by 150.</div>
+                        </div>
+                        <div class="card-actions">
+                            <button id="buy-wizard-btn" class="gold">Buy Lvl 1 (10 Coins)</button>
+                            <button id="equip-wizard-btn" class="secondary">Equip</button>
                         </div>
                     </div>
                 </div>
@@ -599,6 +625,13 @@
         const adminCurrentScoreText = document.getElementById('admin-current-score');
         const skipCurseBtn = document.getElementById('skip-curse-btn');
         
+        const wizardModifierContainer = document.getElementById('wizard-modifier-container');
+        const curseOptionsWrapper = document.getElementById('curse-options-wrapper');
+        const curseSubtitle = document.getElementById('curse-subtitle');
+        const easyRewardText = document.getElementById('easy-reward');
+        const mediumRewardText = document.getElementById('medium-reward');
+        const hardRewardText = document.getElementById('hard-reward');
+
         // Shop Abilities UI
         const hackerLevelText = document.getElementById('hacker-level-text');
         const hackerCurrentDesc = document.getElementById('hacker-current-desc');
@@ -623,6 +656,12 @@
         const medicNextDesc = document.getElementById('medic-next-desc');
         const buyMedicBtn = document.getElementById('buy-medic-btn');
         const equipMedicBtn = document.getElementById('equip-medic-btn');
+
+        const wizardLevelText = document.getElementById('wizard-level-text');
+        const wizardCurrentDesc = document.getElementById('wizard-current-desc');
+        const wizardNextDesc = document.getElementById('wizard-next-desc');
+        const buyWizardBtn = document.getElementById('buy-wizard-btn');
+        const equipWizardBtn = document.getElementById('equip-wizard-btn');
 
         // Shop Skins UI
         const skinButtons = {
@@ -681,6 +720,7 @@
         let magnetLevel = parseInt(localStorage.getItem('stickman_magnet_lvl')) || 0;
         let slimeLevel = parseInt(localStorage.getItem('stickman_slime_lvl')) || 0;
         let medicLevel = parseInt(localStorage.getItem('stickman_medic_lvl')) || 0;
+        let wizardLevel = parseInt(localStorage.getItem('stickman_wizard_lvl')) || 0;
         let equippedAbility = localStorage.getItem('stickman_equipped') || 'none';
         let equippedSkin = localStorage.getItem('stickman_equipped_skin') || 'default';
 
@@ -700,7 +740,12 @@
         // Curses System State
         let activeCurse = null;       // 'easy', 'medium', 'hard', or null
         let curseTimer = 0;           // Duration counter for active curse
-        let nextCurseThreshold = 900; // Next score target to trigger altar (changed to 900)
+        let nextCurseThreshold = 900; // Next score target to trigger altar
+
+        // Dynamic Curse Coin Rewards per prompt
+        let currentEasyReward = 0;
+        let currentMediumReward = 1;
+        let currentHardReward = 2;
 
         // Visual FX Animators for Curses
         let mediumFlameAnimTimer = 0;
@@ -731,6 +776,7 @@
             localStorage.setItem('stickman_magnet_lvl', magnetLevel);
             localStorage.setItem('stickman_slime_lvl', slimeLevel);
             localStorage.setItem('stickman_medic_lvl', medicLevel);
+            localStorage.setItem('stickman_wizard_lvl', wizardLevel);
             localStorage.setItem('stickman_equipped', equippedAbility);
             localStorage.setItem('stickman_equipped_skin', equippedSkin);
         }
@@ -784,7 +830,6 @@
             draw() {
                 const headY = this.y - this.height;
 
-                // Determine Base Skin Color
                 let skinColor = WHITE_STICKMAN;
                 if (equippedSkin === 'green') skinColor = '#00ff66';
                 else if (equippedSkin === 'pirate') skinColor = '#ffaa00';
@@ -990,7 +1035,6 @@
             }
         };
 
-        // Ability Logic triggers
         function triggerAbilityE() {
             if (gameState !== 'PLAYING' || activeCurse === 'hard') return;
 
@@ -1012,8 +1056,9 @@
                     });
                     abilityCooldownE = Math.floor(15.0 * 60 * cdMult);
                 } else if (hackerLevel === 3) {
+                    // Hacker Level 3 cooldown increased by 5 seconds (28s total base)
                     hackerLvl3Timer = 9.0 * 60;
-                    abilityCooldownE = Math.floor(23.0 * 60 * cdMult);
+                    abilityCooldownE = Math.floor(28.0 * 60 * cdMult);
                 }
             }
 
@@ -1063,27 +1108,84 @@
         // Curses System Triggers
         function triggerCursePrompt() {
             gameState = 'CURSE_PROMPT';
-            obstacles = []; // Clear obstacles
+            obstacles = [];
             curseScreen.classList.remove('hidden');
+
+            currentEasyReward = 0;
+            currentMediumReward = 1;
+            currentHardReward = 2;
+
+            easyRewardText.textContent = `+${currentEasyReward} Coins`;
+            mediumRewardText.textContent = `+${currentMediumReward} Coin`;
+            hardRewardText.textContent = `+${currentHardReward} Coins`;
+
+            // Wizard Level 2 check for special pre-choice modifier menu
+            if (equippedAbility === 'wizard' && wizardLevel >= 2) {
+                wizardModifierContainer.classList.remove('hidden');
+                curseOptionsWrapper.classList.add('hidden');
+                skipCurseBtn.classList.add('hidden');
+                curseSubtitle.textContent = 'Wizard Lvl 2: Choose your altar modifier!';
+            } else {
+                wizardModifierContainer.classList.add('hidden');
+                curseOptionsWrapper.classList.remove('hidden');
+                skipCurseBtn.classList.remove('hidden');
+                curseSubtitle.textContent = 'Reached a milestone! Choose a curse to proceed:';
+                skipCurseBtn.disabled = totalCoins < 1;
+                skipCurseBtn.textContent = totalCoins >= 1 ? 'Skip Curse (Pay 1 Coin)' : 'Skip Curse (Need 1 Coin)';
+            }
+        }
+
+        function applyWizardModifier(modifierType) {
+            wizardModifierContainer.classList.add('hidden');
+            curseOptionsWrapper.classList.remove('hidden');
+            skipCurseBtn.classList.remove('hidden');
+            curseSubtitle.textContent = 'Reached a milestone! Choose a curse to proceed:';
+
+            if (modifierType === 'higher_reward') {
+                currentEasyReward += 1;
+                currentMediumReward += 1;
+                currentHardReward += 1;
+
+                easyRewardText.textContent = `+${currentEasyReward} Coins`;
+                mediumRewardText.textContent = `+${currentMediumReward} Coins`;
+                hardRewardText.textContent = `+${currentHardReward} Coins`;
+            } else if (modifierType === 'opt_out') {
+                activeCurse = null;
+                curseTimer = 0;
+                curseScreen.classList.add('hidden');
+                gameState = 'PLAYING';
+                spawnPausedTimer = 40;
+                return;
+            } else if (modifierType === 'faster_curse') {
+                nextCurseThreshold -= 150;
+            }
+
             skipCurseBtn.disabled = totalCoins < 1;
             skipCurseBtn.textContent = totalCoins >= 1 ? 'Skip Curse (Pay 1 Coin)' : 'Skip Curse (Need 1 Coin)';
         }
 
         function selectCurse(type) {
             activeCurse = type;
-            curseTimer = 500; // Lasts for 500 score points
+            
+            // Base curse duration is 500, Wizard Level 1/2 shortens curse duration down by 150
+            let duration = 500;
+            if (equippedAbility === 'wizard' && wizardLevel >= 1) {
+                duration -= 150; // 350 total duration
+            }
+            curseTimer = duration;
+
             curseScreen.classList.add('hidden');
             gameState = 'PLAYING';
             spawnPausedTimer = 60;
 
-            // Updated coin rewards: Medium gives 1 coin, Hard gives 2 coins
-            if (type === 'medium') {
-                totalCoins += 1;
-                mediumFlameAnimTimer = 45; // trigger single big flame pop-up animation
-            }
-            if (type === 'hard') {
-                totalCoins += 2;
-                hardLightningAnimTimer = 45; // trigger single big lightning strike animation
+            if (type === 'easy') {
+                totalCoins += currentEasyReward;
+            } else if (type === 'medium') {
+                totalCoins += currentMediumReward;
+                mediumFlameAnimTimer = 45; 
+            } else if (type === 'hard') {
+                totalCoins += currentHardReward;
+                hardLightningAnimTimer = 45; 
             }
             saveGameData();
         }
@@ -1148,11 +1250,13 @@
         buyMagnetBtn.addEventListener('click', () => purchaseAbility('magnet'));
         buySlimeBtn.addEventListener('click', () => purchaseAbility('slime'));
         buyMedicBtn.addEventListener('click', () => purchaseAbility('medic'));
+        buyWizardBtn.addEventListener('click', () => purchaseAbility('wizard'));
 
         equipHackerBtn.addEventListener('click', () => equipAbility('hacker'));
         equipMagnetBtn.addEventListener('click', () => equipAbility('magnet'));
         equipSlimeBtn.addEventListener('click', () => equipAbility('slime'));
         equipMedicBtn.addEventListener('click', () => equipAbility('medic'));
+        equipWizardBtn.addEventListener('click', () => equipAbility('wizard'));
 
         // Skin Equip Listeners
         skinButtons['default'].addEventListener('click', () => equipSkin('default'));
@@ -1196,6 +1300,7 @@
             magnetLevel = 0;
             slimeLevel = 0;
             medicLevel = 0;
+            wizardLevel = 0;
             equippedAbility = 'none';
             equippedSkin = 'default';
             saveGameData();
@@ -1248,11 +1353,11 @@
                 buyHackerBtn.disabled = totalCoins < 35;
             } else if (hackerLevel === 2) {
                 hackerCurrentDesc.innerHTML = `<b>Lvl 2:</b> Hack next 3 obstacles! (CD: 15s)`;
-                hackerNextDesc.innerHTML = `<b>Lvl 3:</b> 9s Invincibility mode! (CD: 23s)`;
+                hackerNextDesc.innerHTML = `<b>Lvl 3:</b> 9s Invincibility mode! (CD: 28s)`;
                 buyHackerBtn.textContent = `Upgrade Lvl 3 (100 Coins)`;
                 buyHackerBtn.disabled = totalCoins < 100;
             } else {
-                hackerCurrentDesc.innerHTML = `<b>Lvl 3 MAX:</b> 9s Invincibility + Lag Burst! (CD: 23s)`;
+                hackerCurrentDesc.innerHTML = `<b>Lvl 3 MAX:</b> 9s Invincibility + Lag Burst! (CD: 28s)`;
                 hackerNextDesc.innerHTML = `<b>Next:</b> MAX LEVEL`;
                 buyHackerBtn.textContent = `MAXED`;
                 buyHackerBtn.disabled = true;
@@ -1324,6 +1429,27 @@
             equipMedicBtn.textContent = equippedAbility === 'medic' ? 'EQUIPPED' : 'Equip';
             equipMedicBtn.className = equippedAbility === 'medic' ? 'equipped' : 'secondary';
 
+            wizardLevelText.textContent = `Level: ${wizardLevel} / 2`;
+            if (wizardLevel === 0) {
+                wizardCurrentDesc.innerHTML = `<b>Current:</b> Locked`;
+                wizardNextDesc.innerHTML = `<b>Lvl 1:</b> [PASSIVE] Shortens active curse duration by 150 points.`;
+                buyWizardBtn.textContent = `Buy Lvl 1 (10 Coins)`;
+                buyWizardBtn.disabled = totalCoins < 10;
+            } else if (wizardLevel === 1) {
+                wizardCurrentDesc.innerHTML = `<b>Lvl 1:</b> Shortens active curse duration by 150 points.`;
+                wizardNextDesc.innerHTML = `<b>Lvl 2:</b> Altar choice menu: +1 Coin reward, Free Opt Out, or Faster Curse interval!`;
+                buyWizardBtn.textContent = `Upgrade Lvl 2 (50 Coins)`;
+                buyWizardBtn.disabled = totalCoins < 50;
+            } else {
+                wizardCurrentDesc.innerHTML = `<b>Lvl 2 MAX:</b> -150 Curse duration + Altar Modifier Selection Menu!`;
+                wizardNextDesc.innerHTML = `<b>Next:</b> MAX LEVEL`;
+                buyWizardBtn.textContent = `MAXED`;
+                buyWizardBtn.disabled = true;
+            }
+            equipWizardBtn.disabled = wizardLevel === 0;
+            equipWizardBtn.textContent = equippedAbility === 'wizard' ? 'EQUIPPED' : 'Equip';
+            equipWizardBtn.className = equippedAbility === 'wizard' ? 'equipped' : 'secondary';
+
             const skinRequirements = {
                 'green': 1000,
                 'pirate': 2000,
@@ -1373,6 +1499,9 @@
             } else if (ability === 'medic') {
                 if (medicLevel === 0 && totalCoins >= 18) { totalCoins -= 18; medicLevel = 1; equippedAbility = 'medic'; }
                 else if (medicLevel === 1 && totalCoins >= 60) { totalCoins -= 60; medicLevel = 2; }
+            } else if (ability === 'wizard') {
+                if (wizardLevel === 0 && totalCoins >= 10) { totalCoins -= 10; wizardLevel = 1; equippedAbility = 'wizard'; }
+                else if (wizardLevel === 1 && totalCoins >= 50) { totalCoins -= 50; wizardLevel = 2; }
             }
             saveGameData();
             updateShopUI();
@@ -1503,7 +1632,7 @@
             
             activeCurse = null;
             curseTimer = 0;
-            nextCurseThreshold = 900; // Updated to 900 score interval
+            nextCurseThreshold = 900; 
 
             mediumFlameAnimTimer = 0;
             hardLightningAnimTimer = 0;
@@ -1530,7 +1659,7 @@
             const isFlying = allowFlying && Math.random() < 0.4;
             
             let sizeScale = Math.min(1.4, 1 + score / 1200);
-            if (activeCurse === 'medium') sizeScale *= 1.25; // Medium Curse increases obstacle size
+            if (activeCurse === 'medium') sizeScale *= 1.25;
 
             let isHacked = false;
             if (hackerCharges > 0) {
@@ -1574,7 +1703,6 @@
         }
 
         function spawnCoin() {
-            // Easy curse reduces coin spawn chance by 20%
             if (activeCurse === 'easy' && Math.random() < 0.2) return;
 
             const isAirCoin = Math.random() < 0.6; 
@@ -1664,11 +1792,10 @@
                 } else {
                     gameSpeed += 0.002;
                     
-                    // Decoupled score rate: increases at a consistent fixed rate independent of game speed
-                    let scoreIncr = 0.05; 
+                    // Score rate restored back to original lively speed pace
+                    let scoreIncr = 0.25; 
                     score += scoreIncr;
 
-                    // Curse duration tracking
                     if (activeCurse) {
                         curseTimer -= scoreIncr;
                         if (curseTimer <= 0) {
@@ -1676,7 +1803,6 @@
                         }
                     }
 
-                    // Check for continuous Curse Milestones every 900 score points
                     if (score >= nextCurseThreshold) {
                         nextCurseThreshold += 900;
                         triggerCursePrompt();
@@ -1699,14 +1825,11 @@
                 player.update();
                 player.draw();
 
-                // --- CURSE VISUAL EFFECTS OVERLAY ---
                 if (activeCurse === 'easy') {
-                    // Green Mist Particle aura on ground
                     ctx.fillStyle = 'rgba(0, 255, 100, 0.12)';
                     ctx.fillRect(0, GROUND_Y - 25, canvas.width, 25);
                 }
 
-                // Medium Curse: Quick, single big flame pop-up animation when activated
                 if (mediumFlameAnimTimer > 0) {
                     mediumFlameAnimTimer--;
                     ctx.fillStyle = 'rgba(255, 100, 0, 0.55)';
@@ -1726,7 +1849,6 @@
                     ctx.fill();
                 }
 
-                // Hard Curse: Single big lightning strike animation when activated
                 if (hardLightningAnimTimer > 0) {
                     hardLightningAnimTimer--;
                     ctx.strokeStyle = '#00ffff';
@@ -1949,7 +2071,6 @@
                 ctx.fillStyle = '#ffd700';
                 ctx.fillText(`Coins: ${totalCoins}`, 250, 35);
 
-                // Display Active Curse Warning on HUD if present
                 if (activeCurse) {
                     ctx.fillStyle = activeCurse === 'easy' ? '#00ff66' : (activeCurse === 'medium' ? '#ffaa00' : '#ff2222');
                     ctx.font = 'bold 13px sans-serif';
@@ -1994,6 +2115,9 @@
                     let revStatus = (!hasRevivedThisRun) ? 'READY' : 'USED';
                     let lifeTxt = medicLevel === 2 ? ` | Lives: ❤️ x${medicLives}` : '';
                     ctx.fillText(`[PASSIVE] Revive: ${revStatus}${lifeTxt}`, 360, 35);
+                } else if (equippedAbility === 'wizard' && wizardLevel > 0) {
+                    ctx.fillStyle = '#aa00ff';
+                    ctx.fillText(`[PASSIVE] Wizard Lvl ${wizardLevel}`, 370, 35);
                 }
             }
 
