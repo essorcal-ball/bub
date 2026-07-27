@@ -704,7 +704,7 @@
         // Game Constants
         const GROUND_Y = 320;
         const GRAVITY = 0.6;
-        const JUMP_FORCE = -12;
+        const BASE_JUMP_FORCE = -12;
         
         // Colors
         const RED_OBSTACLE = '#ff2222';
@@ -801,7 +801,10 @@
 
             jump() {
                 if (this.isGrounded && !this.isDucking) {
-                    this.vy = JUMP_FORCE;
+                    // As game speed increases, jump height scales down slightly to keep pace
+                    let dynamicJumpForce = BASE_JUMP_FORCE * (1 + (gameSpeed - 5) * 0.03);
+                    dynamicJumpForce = Math.max(-13.5, Math.min(-10.5, dynamicJumpForce));
+                    this.vy = dynamicJumpForce;
                     this.isGrounded = false;
                 }
             },
@@ -1851,7 +1854,7 @@
 
                 if (hardLightningAnimTimer > 0) {
                     hardLightningAnimTimer--;
-                    ctx.strokeStyle = '#00ffff';
+                    ctx.strokeStyle = '#ff2222';
                     ctx.lineWidth = 6;
                     ctx.beginPath();
                     ctx.moveTo(420, 0);
@@ -1860,7 +1863,7 @@
                     ctx.lineTo(380, GROUND_Y);
                     ctx.stroke();
 
-                    ctx.fillStyle = 'rgba(0, 255, 255, 0.15)';
+                    ctx.fillStyle = 'rgba(255, 34, 34, 0.15)';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
 
