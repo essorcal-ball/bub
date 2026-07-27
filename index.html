@@ -351,16 +351,16 @@
                     <div class="curse-card medium" onclick="selectCurse('medium')">
                         <div>
                             <h4 style="color: #ffaa00;">🔥 Flame Heat Curse</h4>
-                            <p style="font-size: 0.8rem; margin:0;">Flames: Larger obstacles & slower cooldowns for 500 pts.</p>
+                            <p style="font-size: 0.8rem; margin:0;">Flame Pop-up: Larger obstacles & slower cooldowns for 500 pts.</p>
                         </div>
-                        <span style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+2 Coins</span>
+                        <span style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+1 Coin</span>
                     </div>
                     <div class="curse-card hard" onclick="selectCurse('hard')">
                         <div>
                             <h4 style="color: #ff2222;">⚡ Lightning Void Curse</h4>
-                            <p style="font-size: 0.8rem; margin:0;">Red Lightning: Disables all active abilities for 500 pts.</p>
+                            <p style="font-size: 0.8rem; margin:0;">Lightning Strike: Disables all active abilities for 500 pts.</p>
                         </div>
-                        <span style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+5 Coins</span>
+                        <span style="color: #ffd700; font-weight:bold; font-size:0.9rem;">+2 Coins</span>
                     </div>
                 </div>
                 <button id="skip-curse-btn" class="secondary" style="width: 100%; font-size: 0.9rem;" onclick="skipCurse()">Skip Curse (Pay 1 Coin)</button>
@@ -700,7 +700,11 @@
         // Curses System State
         let activeCurse = null;       // 'easy', 'medium', 'hard', or null
         let curseTimer = 0;           // Duration counter for active curse
-        let nextCurseThreshold = 800; // Next score target to trigger altar
+        let nextCurseThreshold = 900; // Next score target to trigger altar (changed to 900)
+
+        // Visual FX Animators for Curses
+        let mediumFlameAnimTimer = 0;
+        let hardLightningAnimTimer = 0;
 
         // Ability States
         let abilityCooldownE = 0;
@@ -1072,8 +1076,15 @@
             gameState = 'PLAYING';
             spawnPausedTimer = 60;
 
-            if (type === 'medium') totalCoins += 2;
-            if (type === 'hard') totalCoins += 5;
+            // Updated coin rewards: Medium gives 1 coin, Hard gives 2 coins
+            if (type === 'medium') {
+                totalCoins += 1;
+                mediumFlameAnimTimer = 45; // trigger single big flame pop-up animation
+            }
+            if (type === 'hard') {
+                totalCoins += 2;
+                hardLightningAnimTimer = 45; // trigger single big lightning strike animation
+            }
             saveGameData();
         }
 
@@ -1492,7 +1503,10 @@
             
             activeCurse = null;
             curseTimer = 0;
-            nextCurseThreshold = 800;
+            nextCurseThreshold = 900; // Updated to 900 score interval
+
+            mediumFlameAnimTimer = 0;
+            hardLightningAnimTimer = 0;
 
             abilityCooldownE = (equippedAbility === 'slime') ? 10 * 60 : 0;
             abilityCooldownQ = (equippedAbility === 'slime') ? 10 * 60 : 0;
@@ -1649,7 +1663,9 @@
                     medicReviveTimer--;
                 } else {
                     gameSpeed += 0.002;
-                    let scoreIncr = gameSpeed * 0.05;
+                    
+                    // Decoupled score rate: increases at a consistent fixed rate independent of game speed
+                    let scoreIncr = 0.05; 
                     score += scoreIncr;
 
                     // Curse duration tracking
@@ -1660,9 +1676,9 @@
                         }
                     }
 
-                    // Check for continuous Curse Milestones every 800 score points
+                    // Check for continuous Curse Milestones every 900 score points
                     if (score >= nextCurseThreshold) {
-                        nextCurseThreshold += 800;
+                        nextCurseThreshold += 900;
                         triggerCursePrompt();
                     }
                 }
@@ -1688,16 +1704,42 @@
                     // Green Mist Particle aura on ground
                     ctx.fillStyle = 'rgba(0, 255, 100, 0.12)';
                     ctx.fillRect(0, GROUND_Y - 25, canvas.width, 25);
-                } else if (activeCurse === 'medium') {
-                    // Flame Flicker Effect at bottom
-                    ctx.fillStyle = Math.random() < 0.5 ? 'rgba(255, 120, 0, 0.2)' : 'rgba(255, 50, 0, 0.2)';
-                    ctx.fillRect(0, GROUND_Y - 35, canvas.width, 35);
-                } else if (activeCurse === 'hard') {
-                    // Red Lightning Strobe Effect across screen
-                    if (Math.random() < 0.1) {
-                        ctx.fillStyle = 'rgba(255, 34, 34, 0.18)';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    }
+                }
+
+                // Medium Curse: Quick, single big flame pop-up animation when activated
+                if (mediumFlameAnimTimer > 0) {
+                    mediumFlameAnimTimer--;
+                    ctx.fillStyle = 'rgba(255, 100, 0, 0.55)';
+                    ctx.beginPath();
+                    ctx.moveTo(350, GROUND_Y);
+                    ctx.lineTo(400, GROUND_Y - 120);
+                    ctx.lineTo(450, GROUND_Y);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.fillStyle = 'rgba(255, 220, 0, 0.7)';
+                    ctx.beginPath();
+                    ctx.moveTo(375, GROUND_Y);
+                    ctx.lineTo(400, GROUND_Y - 80);
+                    ctx.lineTo(425, GROUND_Y);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Hard Curse: Single big lightning strike animation when activated
+                if (hardLightningAnimTimer > 0) {
+                    hardLightningAnimTimer--;
+                    ctx.strokeStyle = '#00ffff';
+                    ctx.lineWidth = 6;
+                    ctx.beginPath();
+                    ctx.moveTo(420, 0);
+                    ctx.lineTo(390, 150);
+                    ctx.lineTo(430, 160);
+                    ctx.lineTo(380, GROUND_Y);
+                    ctx.stroke();
+
+                    ctx.fillStyle = 'rgba(0, 255, 255, 0.15)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
 
                 if (medicReviveTimer > 0) {
