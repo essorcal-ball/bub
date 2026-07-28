@@ -611,7 +611,7 @@
 
         <!-- Fight Game Over Screen -->
         <div id="fight-gameover-screen" class="ui-screen hidden">
-            <h2 style="color: #ff2222;">DEFEATED!</h2>
+            <h2 id="fight-gameover-title" style="color: #ff2222;">DEFEATED!</h2>
             <p id="fight-final-score">Enemies Defeated: 0</p>
             <p id="fight-high-score" style="color: #00e676;">Best Defeated: 0</p>
             <div class="btn-group">
@@ -700,6 +700,7 @@
         const finalCoinsText = document.getElementById('final-coins');
         const fightFinalScoreText = document.getElementById('fight-final-score');
         const fightHighScoreText = document.getElementById('fight-high-score');
+        const fightGameoverTitle = document.getElementById('fight-gameover-title');
         const adminCurrentCoinsText = document.getElementById('admin-current-coins');
         const adminCurrentScoreText = document.getElementById('admin-current-score');
         const skipCurseBtn = document.getElementById('skip-curse-btn');
@@ -834,6 +835,10 @@
         let fightSpeed = 3.5;
         let playerAttackAction = null; // 'punch', 'kick', 'headbutt', or null
         let playerAttackTimer = 0;
+
+        // Combo/Multi-attack Enemy State
+        let activeComboEnemy = null; // null or enemy object
+        let currentComboStep = 0;
 
         // Curses System State
         let activeCurse = null;
@@ -1367,7 +1372,7 @@
 
         equipHackerBtn.addEventListener('click', () => equipAbility('hacker'));
         equipMagnetBtn.addEventListener('click', () => equipAbility('magnet'));
-        equipSlimetBtn = equipSlimeBtn.addEventListener('click', () => equipAbility('slime'));
+        equipSlimeBtn.addEventListener('click', () => equipAbility('slime'));
         equipMedicBtn.addEventListener('click', () => equipAbility('medic'));
         equipWizardBtn.addEventListener('click', () => equipAbility('wizard'));
 
@@ -1757,13 +1762,14 @@
             gameoverScreen.classList.remove('hidden');
         }
 
-        function triggerFightGameOver() {
+        function triggerFightGameOver(isGameOver = true, message = "DEFEATED!") {
             activeGameMode = 'FIGHT_GAMEOVER';
             if (fightScore > fightHighScore) {
                 fightHighScore = fightScore;
             }
             saveGameData();
 
+            fightGameoverTitle.textContent = message;
             fightFinalScoreText.textContent = `Enemies Defeated: ${fightScore}`;
             fightHighScoreText.textContent = `Best Defeated: ${fightHighScore}`;
             fightGameoverScreen.classList.remove('hidden');
@@ -1829,6 +1835,8 @@
             fightSpeed = 3.5;
             playerAttackAction = null;
             playerAttackTimer = 0;
+            activeComboEnemy = null;
+            currentComboStep = 0;
         }
 
         function spawnObstacle() {
@@ -1912,30 +1920,55 @@
         }
 
         function spawnFightEnemy() {
-            const randType = Math.random();
-            let enemyType;
-            let combos;
+            const rand = Math.random();
+            let type, combo, width, height;
 
-            if (randType < 0.33) {
-                enemyType = 'normal';
-                combos = [Math.random() < 0.5 ? 'punch' : 'kick'];
-            } else if (randType < 0.66) {
-                enemyType = 'big';
-                combos = [Math.random() < 0.5 ? 'punch' : 'kick', Math.random() < 0.5 ? 'headbutt' : 'punch'];
+            if (rand < 0.33) {
+                type = 'normal';
+                const attackType = Math.random() < 0.33 ? 'punch' : (Math.random() < 0.5 ? 'kick' : 'headbutt');
+                fightEnemies.push({
+                    x: canvas.width + 40,
+                    y: GROUND_Y,
+                    type: 'normal',
+                    attackType: attackType,
+                    width: 40,
+                    height: 50
+                });
+            } else if (rand < 0.66) {
+                type = 'big';
+                // 2 attack combo for big stickman
+                const possibleAttacks = ['punch', 'kick', 'headbutt'];
+                combo = [
+                    possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)],
+                    possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)]
+                ];
+                fightEnemies.push({
+                    x: canvas.width + 60,
+                    y: GROUND_Y,
+                    type: 'big',
+                    combo: combo,
+                    comboIndex: 0,
+                    width: 60,
+                    height: 75
+                });
             } else {
-                enemyType = 'bat';
-                combos = ['punch', 'headbutt'];
+                type = 'bat';
+                // 2 attack combo for baseball bat stickman
+                const possibleAttacks = ['punch', 'kick', 'headbutt'];
+                combo = [
+                    possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)],
+                    possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)]
+                ];
+                fightEnemies.push({
+                    x: canvas.width + 40,
+                    y: GROUND_Y,
+                    type: 'bat',
+                    combo: combo,
+                    comboIndex: 0,
+                    width: 45,
+                    height: 55
+                });
             }
-
-            fightEnemies.push({
-                x: canvas.width + 40,
-                y: GROUND_Y,
-                enemyType: enemyType,
-                combos: combos,
-                currentComboIndex: 0,
-                width: enemyType === 'big' ? 55 : 40,
-                height: enemyType === 'big' ? 65 : 50
-            });
         }
 
         function attemptFightAttack(attackName) {
@@ -1946,35 +1979,44 @@
             const boxLeft = 140;
             const boxRight = 195;
 
-            // Find an enemy inside the hitbox
+            // If we are currently focused on a multi-combo enemy that is halted in front
+            if (activeComboEnemy) {
+                if (activeComboEnemy.combo[currentComboStep] === attackName) {
+                    currentComboStep++;
+                    if (currentComboStep >= activeComboEnemy.combo.length) {
+                        // Destroy combo enemy!
+                        const index = fightEnemies.indexOf(activeComboEnemy);
+                        if (index !== -1) fightEnemies.splice(index, 1);
+                        fightScore++;
+                        fightSpeed += 0.05;
+                        activeComboEnemy = null;
+                        currentComboStep = 0;
+                    }
+                } else {
+                    // Messed up combo!
+                    if (activeComboEnemy.type === 'big') {
+                        // Big stickman: start over (reset combo progress and send back slightly or reset step)
+                        currentComboStep = 0;
+                    } else if (activeComboEnemy.type === 'bat') {
+                        // Baseball bat stickman: game over
+                        triggerFightGameOver(true, "GAME OVER - BAT SMASHED!");
+                    }
+                }
+                return;
+            }
+
+            // Find a normal enemy inside the hitbox
             let targetIndex = fightEnemies.findIndex(en => {
                 const enCenter = en.x;
-                return enCenter >= boxLeft && enCenter <= boxRight;
+                return en.type === 'normal' && enCenter >= boxLeft && enCenter <= boxRight;
             });
 
             if (targetIndex !== -1) {
                 let enemy = fightEnemies[targetIndex];
-                let requiredMove = enemy.combos[enemy.currentComboIndex];
-
-                if (requiredMove === attackName) {
-                    enemy.currentComboIndex++;
-                    if (enemy.currentComboIndex >= enemy.combos.length) {
-                        fightEnemies.splice(targetIndex, 1);
-                        fightScore++;
-                        fightSpeed += 0.05;
-                    }
-                } else {
-                    if (enemy.enemyType === 'big') {
-                        // Big stickman: mess up means starting over combo
-                        enemy.currentComboIndex = 0;
-                    } else if (enemy.enemyType === 'bat') {
-                        // Bat stickman: mess up means game over
-                        triggerFightGameOver();
-                    } else {
-                        // Normal enemy behavior if any
-                        fightEnemies.splice(targetIndex, 1);
-                        fightScore++;
-                    }
+                if (enemy.attackType === attackName) {
+                    fightEnemies.splice(targetIndex, 1);
+                    fightScore++;
+                    fightSpeed += 0.05;
                 }
             }
         }
@@ -2416,7 +2458,7 @@
                 drawEnvironment();
 
                 fightSpawnTimer++;
-                if (fightSpawnTimer >= fightNextSpawn) {
+                if (fightSpawnTimer >= fightNextSpawn && !activeComboEnemy) {
                     spawnFightEnemy();
                     fightSpawnTimer = 0;
                     fightNextSpawn = Math.max(50, Math.floor(120 - fightSpeed * 10));
@@ -2465,9 +2507,8 @@
                     ctx.moveTo(fighterX, GROUND_Y - 15);
                     ctx.lineTo(fighterX + 30, GROUND_Y - 20);
                 } else if (playerAttackAction === 'headbutt') {
-                    // Head-butt leaned forward
-                    ctx.moveTo(fighterX, GROUND_Y - 38);
-                    ctx.lineTo(fighterX + 15, GROUND_Y - 45);
+                    // Head leaning forward slightly
+                    ctx.arc(fighterX + 10, GROUND_Y - 50, 12, 0, Math.PI * 2);
                 } else {
                     // Normal idle arms
                     ctx.moveTo(fighterX, GROUND_Y - 30);
@@ -2475,7 +2516,7 @@
                 }
                 ctx.stroke();
 
-                // Draw Hitbox (slightly away from player, tiniest taller and longer)
+                // Draw Hitbox
                 const boxX = 138;
                 const boxY = GROUND_Y - 53;
                 const boxW = 54;
@@ -2498,54 +2539,71 @@
                 // Update and draw enemies
                 for (let i = fightEnemies.length - 1; i >= 0; i--) {
                     const en = fightEnemies[i];
-                    en.x -= fightSpeed;
-
-                    // Draw Enemy Stickman (Support for Big Stickman and Bat Stickman)
-                    ctx.strokeStyle = '#ff2222';
-                    ctx.lineWidth = (en.enemyType === 'big') ? 5 : 3;
                     
-                    const headRadius = (en.enemyType === 'big') ? 18 : 12;
-                    ctx.beginPath();
-                    ctx.arc(en.x, GROUND_Y - en.height, headRadius, 0, Math.PI * 2);
-                    ctx.stroke();
-
-                    // If bat stickman, draw baseball bat
-                    if (en.enemyType === 'bat') {
-                        ctx.strokeStyle = '#aaaaaa';
-                        ctx.lineWidth = 4;
-                        ctx.beginPath();
-                        ctx.moveTo(en.x - 10, GROUND_Y - (en.height - 10));
-                        ctx.lineTo(en.x - 25, GROUND_Y - (en.height - 25));
-                        ctx.stroke();
-                        ctx.strokeStyle = '#ff2222';
-                        ctx.lineWidth = 3;
+                    // If big or bat enemy enters striking range, they stop and require combo input
+                    if (en.type === 'big' || en.type === 'bat') {
+                        if (en.x > 175) {
+                            en.x -= fightSpeed;
+                        } else {
+                            activeComboEnemy = en;
+                        }
+                    } else {
+                        en.x -= fightSpeed;
                     }
 
+                    // Draw Enemy Stickman based on type
+                    ctx.strokeStyle = en.type === 'bat' ? '#ff8800' : '#ff2222';
+                    ctx.lineWidth = en.type === 'big' ? 5 : 3;
+                    
+                    let drawYOffset = en.type === 'big' ? 25 : 0;
+
                     ctx.beginPath();
-                    ctx.moveTo(en.x, GROUND_Y - (en.height - 12));
+                    ctx.arc(en.x, GROUND_Y - 50 - drawYOffset, en.type === 'big' ? 18 : 12, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(en.x, GROUND_Y - 38 - drawYOffset);
                     ctx.lineTo(en.x, GROUND_Y - 15);
                     ctx.stroke();
 
                     ctx.beginPath();
                     ctx.moveTo(en.x, GROUND_Y - 15);
-                    ctx.lineTo(en.x - 8, GROUND_Y);
+                    ctx.lineTo(en.x - 10, GROUND_Y);
                     ctx.moveTo(en.x, GROUND_Y - 15);
-                    ctx.lineTo(en.x + 8, GROUND_Y);
+                    ctx.lineTo(en.x + 10, GROUND_Y);
                     ctx.stroke();
 
-                    // Draw Combo Steps Over Head
+                    if (en.type === 'bat') {
+                        // Draw Baseball Bat item
+                        ctx.strokeStyle = '#8b4513';
+                        ctx.lineWidth = 4;
+                        ctx.beginPath();
+                        ctx.moveTo(en.x - 15, GROUND_Y - 35);
+                        ctx.lineTo(en.x - 30, GROUND_Y - 50);
+                        ctx.stroke();
+                    }
+
+                    // Draw Symbols / Combo Prompts Over Head
                     ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 14px sans-serif';
-                    let nextMove = en.combos[en.currentComboIndex];
-                    let symbolText = '';
-                    if (nextMove === 'punch') symbolText = '👊 [RIGHT]';
-                    else if (nextMove === 'kick') symbolText = '🦵 [DOWN]';
-                    else if (nextMove === 'headbutt') symbolText = '🧠 [UP]';
+                    ctx.font = 'bold 15px sans-serif';
+                    if (en.type === 'normal') {
+                        let symbolText = '';
+                        if (en.attackType === 'punch') symbolText = '👊 [Right Arrow]';
+                        else if (en.attackType === 'kick') symbolText = '🦵 [Down Arrow]';
+                        else if (en.attackType === 'headbutt') symbolText = '🗣️ [Up Arrow]';
+                        ctx.fillText(symbolText, en.x - 40, GROUND_Y - 75);
+                    } else {
+                        // Combo display
+                        let comboText = en.combo.map((atk, idx) => {
+                            let icon = atk === 'punch' ? '👊(R)' : (atk === 'kick' ? '🦵(D)' : '🗣️(U)');
+                            return idx === currentComboStep ? `[${icon}]` : icon;
+                        }).join(' ');
+                        ctx.fillStyle = en.type === 'bat' ? '#ff3333' : '#ffff00';
+                        ctx.fillText(`COMBO: ${comboText}`, en.x - 55, GROUND_Y - 85);
+                    }
 
-                    ctx.fillText(`Combo [${en.currentComboIndex + 1}/${en.combos.length}]: ${symbolText}`, en.x - 55, GROUND_Y - (en.height + 22));
-
-                    if (en.x <= fighterX + 15) {
-                        triggerFightGameOver();
+                    if (en.type === 'normal' && en.x <= fighterX + 15) {
+                        triggerFightGameOver(true, "DEFEATED!");
                     }
                 }
 
@@ -2556,7 +2614,7 @@
                 ctx.fillStyle = '#00e676';
                 ctx.fillText(`Best: ${fightHighScore}`, 180, 35);
                 ctx.fillStyle = '#ff2222';
-                ctx.fillText(`➡️: PUNCH | ⬇️: KICK | ⬆️: HEAD-BUTT`, 380, 35);
+                ctx.fillText(`CONTROLS -> ➡️: PUNCH | ⬇️: KICK | ⬆️: HEAD-BUTT`, 380, 35);
             }
 
             requestAnimationFrame(gameLoop);
