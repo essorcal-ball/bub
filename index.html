@@ -385,7 +385,7 @@
         <!-- Stickman Fight Hub Menu -->
         <div id="fight-hub-screen" class="ui-screen hidden">
             <h1 style="color: #ff2222;">STICKMAN FIGHT</h1>
-            <p><b>J:</b> Punch (Punched Symbol) &nbsp;|&nbsp; <b>K:</b> Kick (Kick Symbol)</p>
+            <p><b>RIGHT ARROW:</b> Punch &nbsp;|&nbsp; <b>DOWN ARROW:</b> Kick &nbsp;|&nbsp; <b>UP ARROW:</b> Head-butt</p>
             <p id="fight-highscore" style="color: #00e676; margin-top: 8px;">High Score: 0</p>
             <div class="btn-group">
                 <button id="play-fight-btn" class="danger">Start Fighting</button>
@@ -832,7 +832,7 @@
         let fightSpawnTimer = 0;
         let fightNextSpawn = 120;
         let fightSpeed = 3.5;
-        let playerAttackAction = null; // 'punch', 'kick', or null
+        let playerAttackAction = null; // 'punch', 'kick', 'headbutt', or null
         let playerAttackTimer = 0;
 
         // Curses System State
@@ -1318,12 +1318,15 @@
                     triggerAbilityQ();
                 }
             } else if (activeGameMode === 'FIGHTING') {
-                if (e.code === 'KeyJ') {
+                if (e.code === 'ArrowRight') {
                     e.preventDefault();
                     attemptFightAttack('punch');
-                } else if (e.code === 'KeyK') {
+                } else if (e.code === 'ArrowDown') {
                     e.preventDefault();
                     attemptFightAttack('kick');
+                } else if (e.code === 'ArrowUp') {
+                    e.preventDefault();
+                    attemptFightAttack('headbutt');
                 }
             }
         });
@@ -1364,7 +1367,7 @@
 
         equipHackerBtn.addEventListener('click', () => equipAbility('hacker'));
         equipMagnetBtn.addEventListener('click', () => equipAbility('magnet'));
-        equipSlimeBtn.addEventListener('click', () => equipAbility('slime'));
+        equipSlimetBtn = equipSlimeBtn.addEventListener('click', () => equipAbility('slime'));
         equipMedicBtn.addEventListener('click', () => equipAbility('medic'));
         equipWizardBtn.addEventListener('click', () => equipAbility('wizard'));
 
@@ -1909,25 +1912,48 @@
         }
 
         function spawnFightEnemy() {
-            const attackType = Math.random() < 0.5 ? 'punch' : 'kick';
+            const rand = Math.random();
+            let enemyType, attackCombo;
+
+            if (rand < 0.33) {
+                // Regular enemy
+                const types = ['punch', 'kick', 'headbutt'];
+                enemyType = 'normal';
+                attackCombo = [types[Math.floor(Math.random() * types.length)]];
+            } else if (rand < 0.66) {
+                // Big stickman (2 combos, reset on fail)
+                enemyType = 'big';
+                attackCombo = [
+                    ['punch', 'kick', 'headbutt'][Math.floor(Math.random() * 3)],
+                    ['punch', 'kick', 'headbutt'][Math.floor(Math.random() * 3)]
+                ];
+            } else {
+                // Baseball bat stickman (2 combos, game over on fail)
+                enemyType = 'bat';
+                attackCombo = [
+                    ['punch', 'kick', 'headbutt'][Math.floor(Math.random() * 3)],
+                    ['punch', 'kick', 'headbutt'][Math.floor(Math.random() * 3)]
+                ];
+            }
+
             fightEnemies.push({
                 x: canvas.width + 40,
                 y: GROUND_Y,
-                attackType: attackType,
-                width: 40,
-                height: 50
+                enemyType: enemyType,
+                attackCombo: attackCombo,
+                currentComboIndex: 0,
+                width: enemyType === 'big' ? 60 : 40,
+                height: enemyType === 'big' ? 70 : 50
             });
         }
 
         function attemptFightAttack(attackName) {
             playerAttackAction = attackName;
-            playerAttackTimer = 15; // Animation frames duration
+            playerAttackTimer = 15;
 
-            // Hitbox setup: slightly away from player, tiniest taller and longer
             const boxLeft = 140;
             const boxRight = 195;
 
-            // Find an enemy inside the hitbox
             let targetIndex = fightEnemies.findIndex(en => {
                 const enCenter = en.x;
                 return enCenter >= boxLeft && enCenter <= boxRight;
@@ -1935,10 +1961,25 @@
 
             if (targetIndex !== -1) {
                 let enemy = fightEnemies[targetIndex];
-                if (enemy.attackType === attackName) {
-                    fightEnemies.splice(targetIndex, 1);
-                    fightScore++;
-                    fightSpeed += 0.05;
+                let expectedAttack = enemy.attackCombo[enemy.currentComboIndex];
+
+                if (expectedAttack === attackName) {
+                    enemy.currentComboIndex++;
+                    if (enemy.currentComboIndex >= enemy.attackCombo.length) {
+                        fightEnemies.splice(targetIndex, 1);
+                        fightScore++;
+                        fightSpeed += 0.05;
+                    }
+                } else {
+                    // Messed up combo
+                    if (enemy.enemyType === 'big') {
+                        enemy.currentComboIndex = 0; // reset progress
+                    } else if (enemy.enemyType === 'bat') {
+                        triggerFightGameOver(); // game over
+                    } else {
+                        // normal enemy wrong attack counts as miss or gameover depending on rules, let's treat normal wrong as game over or reset
+                        triggerFightGameOver();
+                    }
                 }
             }
         }
@@ -2394,7 +2435,7 @@
                     }
                 }
 
-                // Draw central stationary fighter with punch/kick animations
+                // Draw central stationary fighter with punch/kick/headbutt animations
                 const fighterX = 120;
                 ctx.strokeStyle = '#00ff66';
                 ctx.lineWidth = 3;
@@ -2421,21 +2462,21 @@
                 // Arms / Animation
                 ctx.beginPath();
                 if (playerAttackAction === 'punch') {
-                    // Punching arm extended forward
                     ctx.moveTo(fighterX, GROUND_Y - 30);
                     ctx.lineTo(fighterX + 30, GROUND_Y - 30);
                 } else if (playerAttackAction === 'kick') {
-                    // Kicking leg extended forward
                     ctx.moveTo(fighterX, GROUND_Y - 15);
                     ctx.lineTo(fighterX + 30, GROUND_Y - 20);
+                } else if (playerAttackAction === 'headbutt') {
+                    ctx.moveTo(fighterX, GROUND_Y - 50);
+                    ctx.lineTo(fighterX + 25, GROUND_Y - 50);
                 } else {
-                    // Normal idle arms
                     ctx.moveTo(fighterX, GROUND_Y - 30);
                     ctx.lineTo(fighterX + 15, GROUND_Y - 25);
                 }
                 ctx.stroke();
 
-                // Draw Hitbox (slightly away from player, tiniest taller and longer)
+                // Draw Hitbox
                 const boxX = 138;
                 const boxY = GROUND_Y - 53;
                 const boxW = 54;
@@ -2460,30 +2501,46 @@
                     const en = fightEnemies[i];
                     en.x -= fightSpeed;
 
-                    // Draw Enemy Stickman
-                    ctx.strokeStyle = '#ff2222';
-                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = en.enemyType === 'big' ? '#ff8800' : (en.enemyType === 'bat' ? '#aa22ff' : '#ff2222');
+                    ctx.lineWidth = en.enemyType === 'big' ? 5 : 3;
+                    
+                    let headRadius = en.enemyType === 'big' ? 16 : 12;
+                    let bodyHeight = en.enemyType === 'big' ? 45 : 35;
+
                     ctx.beginPath();
-                    ctx.arc(en.x, GROUND_Y - 50, 12, 0, Math.PI * 2);
+                    ctx.arc(en.x, GROUND_Y - 15 - bodyHeight, headRadius, 0, Math.PI * 2);
                     ctx.stroke();
 
                     ctx.beginPath();
-                    ctx.moveTo(en.x, GROUND_Y - 38);
+                    ctx.moveTo(en.x, GROUND_Y - 15 - bodyHeight + headRadius);
                     ctx.lineTo(en.x, GROUND_Y - 15);
                     ctx.stroke();
 
                     ctx.beginPath();
                     ctx.moveTo(en.x, GROUND_Y - 15);
-                    ctx.lineTo(en.x - 8, GROUND_Y);
+                    ctx.lineTo(en.x - 10, GROUND_Y);
                     ctx.moveTo(en.x, GROUND_Y - 15);
-                    ctx.lineTo(en.x + 8, GROUND_Y);
+                    ctx.lineTo(en.x + 10, GROUND_Y);
                     ctx.stroke();
 
-                    // Draw Symbol Over Head (Punch or Kick)
+                    if (en.enemyType === 'bat') {
+                        // Draw baseball bat
+                        ctx.strokeStyle = '#d4af37';
+                        ctx.lineWidth = 4;
+                        ctx.beginPath();
+                        ctx.moveTo(en.x, GROUND_Y - 40);
+                        ctx.lineTo(en.x + 25, GROUND_Y - 55);
+                        ctx.stroke();
+                    }
+
+                    // Draw Combo Display
                     ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 16px sans-serif';
-                    let symbolText = en.attackType === 'punch' ? '👊 [J]' : '🦵 [K]';
-                    ctx.fillText(symbolText, en.x - 22, GROUND_Y - 70);
+                    ctx.font = 'bold 14px sans-serif';
+                    let comboStr = en.attackCombo.map((att, idx) => {
+                        let symbol = att === 'punch' ? 'P' : (att === 'kick' ? 'K' : 'H');
+                        return idx === en.currentComboIndex ? `[${symbol}]` : symbol;
+                    }).join(' ');
+                    ctx.fillText(comboStr, en.x - 30, GROUND_Y - 75);
 
                     if (en.x <= fighterX + 15) {
                         triggerFightGameOver();
@@ -2497,7 +2554,7 @@
                 ctx.fillStyle = '#00e676';
                 ctx.fillText(`Best: ${fightHighScore}`, 180, 35);
                 ctx.fillStyle = '#ff2222';
-                ctx.fillText(`CONTROLS -> J: PUNCH | K: KICK`, 450, 35);
+                ctx.fillText(`CONTROLS -> ➡️ PUNCH | ⬇️ KICK | ⬆️ HEAD-BUTT`, 350, 35);
             }
 
             requestAnimationFrame(gameLoop);
