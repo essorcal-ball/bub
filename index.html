@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stickman Jump Hub</title>
+    <title>Stickman Games Hub</title>
     <style>
         * {
             box-sizing: border-box;
@@ -63,7 +63,7 @@
 
         h1 {
             font-size: 2.8rem;
-            margin-bottom: 5px;
+            margin-bottom: 15px;
             color: #ffffff;
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
@@ -83,8 +83,37 @@
 
         .btn-group {
             display: flex;
-            gap: 15px;
-            margin-top: 15px;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        /* Game Hub Selection Cards */
+        .game-card-btn {
+            background: #11111d;
+            border: 2px solid #333355;
+            border-radius: 10px;
+            padding: 15px;
+            width: 220px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .game-card-btn:hover {
+            border-color: #00ff66;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+        }
+
+        .game-thumb-canvas {
+            width: 180px;
+            height: 90px;
+            background: #000;
+            border: 1px solid #444;
+            border-radius: 6px;
+            margin-bottom: 10px;
         }
 
         button {
@@ -322,8 +351,24 @@
     <div id="game-container">
         <canvas id="gameCanvas" width="800" height="400"></canvas>
 
+        <!-- Stickman Games Main Hub (Game Select) -->
+        <div id="master-hub-screen" class="ui-screen">
+            <h1>STICKMAN GAMES</h1>
+            <p>Select a game to play:</p>
+            <div class="btn-group">
+                <div class="game-card-btn" id="launch-jump-hub">
+                    <canvas id="thumb-jump-canvas" class="game-thumb-canvas" width="180" height="90"></canvas>
+                    <p style="font-weight: bold; color: #fff; font-size: 1.1rem;">Stickman Jump</p>
+                </div>
+                <div class="game-card-btn" id="launch-fight-hub">
+                    <canvas id="thumb-fight-canvas" class="game-thumb-canvas" width="180" height="90"></canvas>
+                    <p style="font-weight: bold; color: #ff2222; font-size: 1.1rem;">Stickman Fight</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Stickman Jump Hub Menu -->
-        <div id="hub-screen" class="ui-screen">
+        <div id="hub-screen" class="ui-screen hidden">
             <h1>STICKMAN JUMP</h1>
             <p><b>SPACE / UP:</b> Jump &nbsp;|&nbsp; <b>S / DOWN:</b> Duck &nbsp;|&nbsp; <b>E / Q:</b> Abilities</p>
             <p id="hub-highscore" style="color: #00e676; margin-top: 8px;">High Score: 0</p>
@@ -333,6 +378,18 @@
             <div class="btn-group">
                 <button id="play-btn">Play</button>
                 <button id="shop-btn" class="gold">Shop</button>
+                <button id="back-to-master-btn" class="secondary">Main Menu</button>
+            </div>
+        </div>
+
+        <!-- Stickman Fight Hub Menu -->
+        <div id="fight-hub-screen" class="ui-screen hidden">
+            <h1 style="color: #ff2222;">STICKMAN FIGHT</h1>
+            <p><b>J:</b> Punch (Punched Symbol) &nbsp;|&nbsp; <b>K:</b> Kick (Kick Symbol)</p>
+            <p id="fight-highscore" style="color: #00e676; margin-top: 8px;">High Score: 0</p>
+            <div class="btn-group">
+                <button id="play-fight-btn" class="danger">Start Fighting</button>
+                <button id="fight-back-to-master-btn" class="secondary">Main Menu</button>
             </div>
         </div>
 
@@ -552,6 +609,17 @@
             </div>
         </div>
 
+        <!-- Fight Game Over Screen -->
+        <div id="fight-gameover-screen" class="ui-screen hidden">
+            <h2 style="color: #ff2222;">DEFEATED!</h2>
+            <p id="fight-final-score">Enemies Defeated: 0</p>
+            <p id="fight-high-score" style="color: #00e676;">Best Defeated: 0</p>
+            <div class="btn-group">
+                <button id="fight-retry-btn" class="danger">Fight Again</button>
+                <button id="fight-menu-btn" class="secondary">Back to Menu</button>
+            </div>
+        </div>
+
         <!-- Admin Passcode Screen -->
         <div id="admin-pass-screen" class="ui-screen hidden">
             <div class="admin-panel">
@@ -604,10 +672,18 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // UI Elements
+        const thumbJumpCanvas = document.getElementById('thumb-jump-canvas');
+        const thumbJumpCtx = thumbJumpCanvas.getContext('2d');
+        const thumbFightCanvas = document.getElementById('thumb-fight-canvas');
+        const thumbFightCtx = thumbFightCanvas.getContext('2d');
+
+        // UI Screens
+        const masterHubScreen = document.getElementById('master-hub-screen');
         const hubScreen = document.getElementById('hub-screen');
+        const fightHubScreen = document.getElementById('fight-hub-screen');
         const shopScreen = document.getElementById('shop-screen');
         const gameoverScreen = document.getElementById('gameover-screen');
+        const fightGameoverScreen = document.getElementById('fight-gameover-screen');
         const curseScreen = document.getElementById('curse-screen');
         const adminPassScreen = document.getElementById('admin-pass-screen');
         const adminPanelScreen = document.getElementById('admin-panel-screen');
@@ -616,11 +692,14 @@
         const hubCoinsText = document.getElementById('hub-coins');
         const hubEquippedAbilityText = document.getElementById('hub-equipped-ability');
         const hubEquippedSkinText = document.getElementById('hub-equipped-skin');
+        const fightHighscoreText = document.getElementById('fight-highscore');
         const shopCoinsText = document.getElementById('shop-coins');
         const shopHighscoreText = document.getElementById('shop-highscore');
         const finalScoreText = document.getElementById('final-score');
         const highScoreText = document.getElementById('high-score');
         const finalCoinsText = document.getElementById('final-coins');
+        const fightFinalScoreText = document.getElementById('fight-final-score');
+        const fightHighScoreText = document.getElementById('fight-high-score');
         const adminCurrentCoinsText = document.getElementById('admin-current-coins');
         const adminCurrentScoreText = document.getElementById('admin-current-score');
         const skipCurseBtn = document.getElementById('skip-curse-btn');
@@ -682,11 +761,20 @@
         };
 
         // Buttons
+        const launchJumpHub = document.getElementById('launch-jump-hub');
+        const launchFightHub = document.getElementById('launch-fight-hub');
+        const backToMasterBtn = document.getElementById('back-to-master-btn');
+        const fightBackToMasterBtn = document.getElementById('fight-back-to-master-btn');
+
         const playBtn = document.getElementById('play-btn');
         const shopBtn = document.getElementById('shop-btn');
         const shopBackBtn = document.getElementById('shop-back-btn');
         const retryBtn = document.getElementById('retry-btn');
         const menuBtn = document.getElementById('menu-btn');
+
+        const playFightBtn = document.getElementById('play-fight-btn');
+        const fightRetryBtn = document.getElementById('fight-retry-btn');
+        const fightMenuBtn = document.getElementById('fight-menu-btn');
 
         // Admin Controls
         const adminPassInput = document.getElementById('admin-pass-input');
@@ -716,6 +804,7 @@
         // Saved Data (LocalStorage)
         let totalCoins = parseInt(localStorage.getItem('stickman_coins')) || 0;
         let highScore = parseInt(localStorage.getItem('stickman_highscore')) || 0;
+        let fightHighScore = parseInt(localStorage.getItem('stickman_fight_highscore')) || 0;
         let hackerLevel = parseInt(localStorage.getItem('stickman_hacker_lvl')) || 0;
         let magnetLevel = parseInt(localStorage.getItem('stickman_magnet_lvl')) || 0;
         let slimeLevel = parseInt(localStorage.getItem('stickman_slime_lvl')) || 0;
@@ -724,8 +813,8 @@
         let equippedAbility = localStorage.getItem('stickman_equipped') || 'none';
         let equippedSkin = localStorage.getItem('stickman_equipped_skin') || 'default';
 
-        // Game State Variables
-        let gameState = 'HUB';
+        // Game State Variables ('MASTER_HUB', 'HUB', 'FIGHT_HUB', 'PLAYING', 'FIGHTING', 'CURSE_PROMPT', 'SHOP', 'GAMEOVER', 'FIGHT_GAMEOVER')
+        let activeGameMode = 'MASTER_HUB';
         let score = 0;
         let gameSpeed = 5;
         let obstacles = [];
@@ -737,17 +826,22 @@
         let nextCoinInterval = 300;
         let spawnPausedTimer = 0;
 
-        // Curses System State
-        let activeCurse = null;       // 'easy', 'medium', 'hard', or null
-        let curseTimer = 0;           // Duration counter for active curse
-        let nextCurseThreshold = 900; // Next score target to trigger altar
+        // Stickman Fight Variables
+        let fightEnemies = [];
+        let fightScore = 0;
+        let fightSpawnTimer = 0;
+        let fightNextSpawn = 120;
+        let fightSpeed = 3.5;
 
-        // Dynamic Curse Coin Rewards per prompt
+        // Curses System State
+        let activeCurse = null;
+        let curseTimer = 0;
+        let nextCurseThreshold = 900;
+
         let currentEasyReward = 0;
         let currentMediumReward = 1;
         let currentHardReward = 2;
 
-        // Visual FX Animators for Curses
         let mediumFlameAnimTimer = 0;
         let hardLightningAnimTimer = 0;
 
@@ -759,19 +853,17 @@
         let hackerCharges = 0;
         let isMagnetActive = false;
 
-        // Medic Ability State
         let hasRevivedThisRun = false;
         let medicLives = 0;
         let medicReviveTimer = 0;
 
-        // Slime Blob active entity
         let slimeBlob = null;
         let slimeFloorPuddles = [];
 
-        // Save progress function
         function saveGameData() {
             localStorage.setItem('stickman_coins', totalCoins);
             localStorage.setItem('stickman_highscore', highScore);
+            localStorage.setItem('stickman_fight_highscore', fightHighScore);
             localStorage.setItem('stickman_hacker_lvl', hackerLevel);
             localStorage.setItem('stickman_magnet_lvl', magnetLevel);
             localStorage.setItem('stickman_slime_lvl', slimeLevel);
@@ -781,7 +873,6 @@
             localStorage.setItem('stickman_equipped_skin', equippedSkin);
         }
 
-        // Player (Stickman) State
         const player = {
             x: 80,
             y: GROUND_Y,
@@ -801,7 +892,6 @@
 
             jump() {
                 if (this.isGrounded && !this.isDucking) {
-                    // As game speed increases, jump height scales down slightly to keep pace
                     let dynamicJumpForce = BASE_JUMP_FORCE * (1 + (gameSpeed - 5) * 0.03);
                     dynamicJumpForce = Math.max(-13.5, Math.min(-10.5, dynamicJumpForce));
                     this.vy = dynamicJumpForce;
@@ -830,7 +920,7 @@
                 }
             },
 
-            draw() {
+            draw(targetCtx = ctx) {
                 const headY = this.y - this.height;
 
                 let skinColor = WHITE_STICKMAN;
@@ -847,199 +937,199 @@
                     strokeWidth = Math.random() < 0.3 ? 5 : 3;
                 }
 
-                ctx.strokeStyle = skinColor;
-                ctx.lineWidth = strokeWidth;
-                ctx.lineCap = 'round';
+                targetCtx.strokeStyle = skinColor;
+                targetCtx.lineWidth = strokeWidth;
+                targetCtx.lineCap = 'round';
 
                 let offsetX = (hackerLvl3Timer > 0 && Math.random() < 0.4) ? (Math.random() * 6 - 3) : 0;
 
                 if (equippedSkin === 'alien') {
-                    ctx.shadowColor = '#00ff66';
-                    ctx.shadowBlur = 12;
+                    targetCtx.shadowColor = '#00ff66';
+                    targetCtx.shadowBlur = 12;
                 } else if (equippedSkin === 'gold') {
-                    ctx.shadowColor = '#ffd700';
-                    ctx.shadowBlur = 14;
+                    targetCtx.shadowColor = '#ffd700';
+                    targetCtx.shadowBlur = 14;
                 } else {
-                    ctx.shadowBlur = 0;
+                    targetCtx.shadowBlur = 0;
                 }
 
                 if (equippedSkin === 'robot') {
-                    ctx.fillStyle = '#081020';
-                    ctx.fillRect(this.x - 12 + offsetX, headY - 12, 24, 24);
-                    ctx.strokeRect(this.x - 12 + offsetX, headY - 12, 24, 24);
+                    targetCtx.fillStyle = '#081020';
+                    targetCtx.fillRect(this.x - 12 + offsetX, headY - 12, 24, 24);
+                    targetCtx.strokeRect(this.x - 12 + offsetX, headY - 12, 24, 24);
 
-                    ctx.beginPath();
-                    ctx.moveTo(this.x + offsetX, headY - 12);
-                    ctx.lineTo(this.x + offsetX, headY - 20);
-                    ctx.stroke();
-                    ctx.fillStyle = '#00ccff';
-                    ctx.beginPath();
-                    ctx.arc(this.x + offsetX, headY - 21, 3, 0, Math.PI * 2);
-                    ctx.fill();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(this.x + offsetX, headY - 12);
+                    targetCtx.lineTo(this.x + offsetX, headY - 20);
+                    targetCtx.stroke();
+                    targetCtx.fillStyle = '#00ccff';
+                    targetCtx.beginPath();
+                    targetCtx.arc(this.x + offsetX, headY - 21, 3, 0, Math.PI * 2);
+                    targetCtx.fill();
 
-                    ctx.fillStyle = '#00ffff';
-                    ctx.fillRect(this.x - 8 + offsetX, headY - 5, 16, 5);
+                    targetCtx.fillStyle = '#00ffff';
+                    targetCtx.fillRect(this.x - 8 + offsetX, headY - 5, 16, 5);
                 } else if (equippedSkin === 'alien') {
-                    ctx.fillStyle = '#032e12';
-                    ctx.beginPath();
-                    ctx.ellipse(this.x + offsetX, headY, 14, 18, 0, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.stroke();
+                    targetCtx.fillStyle = '#032e12';
+                    targetCtx.beginPath();
+                    targetCtx.ellipse(this.x + offsetX, headY, 14, 18, 0, 0, Math.PI * 2);
+                    targetCtx.fill();
+                    targetCtx.stroke();
 
-                    ctx.fillStyle = '#000000';
-                    ctx.beginPath();
-                    ctx.ellipse(this.x - 5 + offsetX, headY - 2, 4, 7, -Math.PI / 6, 0, Math.PI * 2);
-                    ctx.ellipse(this.x + 5 + offsetX, headY - 2, 4, 7, Math.PI / 6, 0, Math.PI * 2);
-                    ctx.fill();
+                    targetCtx.fillStyle = '#000000';
+                    targetCtx.beginPath();
+                    targetCtx.ellipse(this.x - 5 + offsetX, headY - 2, 4, 7, -Math.PI / 6, 0, Math.PI * 2);
+                    targetCtx.ellipse(this.x + 5 + offsetX, headY - 2, 4, 7, Math.PI / 6, 0, Math.PI * 2);
+                    targetCtx.fill();
                 } else {
-                    ctx.beginPath();
-                    ctx.arc(this.x + offsetX, headY, this.radius, 0, Math.PI * 2);
-                    ctx.stroke();
+                    targetCtx.beginPath();
+                    targetCtx.arc(this.x + offsetX, headY, this.radius, 0, Math.PI * 2);
+                    targetCtx.stroke();
 
                     if (equippedSkin === 'pirate') {
-                        ctx.fillStyle = '#000000';
-                        ctx.beginPath();
-                        ctx.arc(this.x + 4 + offsetX, headY - 2, 4, 0, Math.PI * 2);
-                        ctx.fill();
+                        targetCtx.fillStyle = '#000000';
+                        targetCtx.beginPath();
+                        targetCtx.arc(this.x + 4 + offsetX, headY - 2, 4, 0, Math.PI * 2);
+                        targetCtx.fill();
 
-                        ctx.strokeStyle = '#000000';
-                        ctx.lineWidth = 1.5;
-                        ctx.beginPath();
-                        ctx.moveTo(this.x - 12 + offsetX, headY - 8);
-                        ctx.lineTo(this.x + 12 + offsetX, headY + 2);
-                        ctx.stroke();
+                        targetCtx.strokeStyle = '#000000';
+                        targetCtx.lineWidth = 1.5;
+                        targetCtx.beginPath();
+                        targetCtx.moveTo(this.x - 12 + offsetX, headY - 8);
+                        targetCtx.lineTo(this.x + 12 + offsetX, headY + 2);
+                        targetCtx.stroke();
 
-                        ctx.fillStyle = '#cc0000';
-                        ctx.beginPath();
-                        ctx.arc(this.x + offsetX, headY - 4, this.radius + 2, Math.PI, 0, false);
-                        ctx.fill();
+                        targetCtx.fillStyle = '#cc0000';
+                        targetCtx.beginPath();
+                        targetCtx.arc(this.x + offsetX, headY - 4, this.radius + 2, Math.PI, 0, false);
+                        targetCtx.fill();
                         
-                        ctx.strokeStyle = skinColor;
-                        ctx.lineWidth = strokeWidth;
+                        targetCtx.strokeStyle = skinColor;
+                        targetCtx.lineWidth = strokeWidth;
                     }
                 }
 
-                ctx.shadowBlur = 0; 
+                targetCtx.shadowBlur = 0; 
 
                 if (medicReviveTimer > 0) {
-                    ctx.beginPath();
-                    ctx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
-                    ctx.lineTo(this.x + offsetX, this.y - 15);
-                    ctx.stroke();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
+                    targetCtx.lineTo(this.x + offsetX, this.y - 15);
+                    targetCtx.stroke();
 
-                    ctx.beginPath();
-                    ctx.moveTo(this.x + offsetX, this.y - 15);
-                    ctx.lineTo(this.x - 8 + offsetX, this.y);
-                    ctx.moveTo(this.x + offsetX, this.y - 15);
-                    ctx.lineTo(this.x + 8 + offsetX, this.y);
-                    ctx.stroke();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(this.x + offsetX, this.y - 15);
+                    targetCtx.lineTo(this.x - 8 + offsetX, this.y);
+                    targetCtx.moveTo(this.x + offsetX, this.y - 15);
+                    targetCtx.lineTo(this.x + 8 + offsetX, this.y);
+                    targetCtx.stroke();
 
-                    ctx.beginPath();
-                    ctx.moveTo(this.x + offsetX, headY + this.radius + 8);
-                    ctx.lineTo(this.x - 10 + offsetX, headY + this.radius + 22);
-                    ctx.stroke();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(this.x + offsetX, headY + this.radius + 8);
+                    targetCtx.lineTo(this.x - 10 + offsetX, headY + this.radius + 22);
+                    targetCtx.stroke();
 
-                    ctx.beginPath();
-                    ctx.moveTo(this.x + offsetX, headY + this.radius + 8);
-                    ctx.lineTo(this.x + 18 + offsetX, headY + this.radius + 8);
-                    ctx.stroke();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(this.x + offsetX, headY + this.radius + 8);
+                    targetCtx.lineTo(this.x + 18 + offsetX, headY + this.radius + 8);
+                    targetCtx.stroke();
 
                     const kitX = this.x + 18 + offsetX;
                     const kitY = headY + this.radius - 2;
 
-                    ctx.fillStyle = '#ff2222';
-                    ctx.fillRect(kitX, kitY, 20, 16);
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(kitX, kitY, 20, 16);
+                    targetCtx.fillStyle = '#ff2222';
+                    targetCtx.fillRect(kitX, kitY, 20, 16);
+                    targetCtx.strokeStyle = '#ffffff';
+                    targetCtx.lineWidth = 1;
+                    targetCtx.strokeRect(kitX, kitY, 20, 16);
 
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(kitX + 8, kitY + 3, 4, 10);
-                    ctx.fillRect(kitX + 5, kitY + 6, 10, 4);
+                    targetCtx.fillStyle = '#ffffff';
+                    targetCtx.fillRect(kitX + 8, kitY + 3, 4, 10);
+                    targetCtx.fillRect(kitX + 5, kitY + 6, 10, 4);
 
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1.5;
-                    ctx.beginPath();
-                    ctx.arc(kitX + 10, kitY, 4, Math.PI, 0, false);
-                    ctx.stroke();
+                    targetCtx.strokeStyle = '#ffffff';
+                    targetCtx.lineWidth = 1.5;
+                    targetCtx.beginPath();
+                    targetCtx.arc(kitX + 10, kitY, 4, Math.PI, 0, false);
+                    targetCtx.stroke();
 
                 } else if (this.isDucking && this.isGrounded) {
-                    ctx.beginPath();
-                    ctx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
-                    ctx.lineTo(this.x - 8 + offsetX, this.y - 8);
-                    ctx.stroke();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
+                    targetCtx.lineTo(this.x - 8 + offsetX, this.y - 8);
+                    targetCtx.stroke();
 
-                    ctx.beginPath();
-                    ctx.moveTo(this.x - 8 + offsetX, this.y - 8);
-                    ctx.lineTo(this.x - 18 + offsetX, this.y);
-                    ctx.moveTo(this.x - 8 + offsetX, this.y - 8);
-                    ctx.lineTo(this.x + 8 + offsetX, this.y);
-                    ctx.stroke();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(this.x - 8 + offsetX, this.y - 8);
+                    targetCtx.lineTo(this.x - 18 + offsetX, this.y);
+                    targetCtx.moveTo(this.x - 8 + offsetX, this.y - 8);
+                    targetCtx.lineTo(this.x + 8 + offsetX, this.y);
+                    targetCtx.stroke();
 
-                    ctx.beginPath();
-                    ctx.moveTo(this.x + offsetX, headY + this.radius + 2);
-                    ctx.lineTo(this.x + 10 + offsetX, headY + this.radius + 8);
-                    ctx.stroke();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(this.x + offsetX, headY + this.radius + 2);
+                    targetCtx.lineTo(this.x + 10 + offsetX, headY + this.radius + 8);
+                    targetCtx.stroke();
                 } else {
-                    ctx.beginPath();
-                    ctx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
-                    ctx.lineTo(this.x + offsetX, this.y - 15);
-                    ctx.stroke();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(this.x + offsetX, headY + (equippedSkin === 'alien' ? 18 : this.radius));
+                    targetCtx.lineTo(this.x + offsetX, this.y - 15);
+                    targetCtx.stroke();
 
-                    ctx.beginPath();
-                    ctx.moveTo(this.x + offsetX, this.y - 15);
-                    ctx.lineTo(this.x - 10 + offsetX, this.y);
-                    ctx.moveTo(this.x + offsetX, this.y - 15);
-                    ctx.lineTo(this.x + 10 + offsetX, this.y);
-                    ctx.stroke();
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(this.x + offsetX, this.y - 15);
+                    targetCtx.lineTo(this.x - 10 + offsetX, this.y);
+                    targetCtx.moveTo(this.x + offsetX, this.y - 15);
+                    targetCtx.lineTo(this.x + 10 + offsetX, this.y);
+                    targetCtx.stroke();
 
-                    ctx.beginPath();
+                    targetCtx.beginPath();
                     const armY = headY + this.radius + 10;
                     if (!this.isGrounded) {
-                        ctx.moveTo(this.x - 12 + offsetX, armY - 8);
-                        ctx.lineTo(this.x + offsetX, armY);
-                        ctx.lineTo(this.x + 12 + offsetX, armY - 8);
+                        targetCtx.moveTo(this.x - 12 + offsetX, armY - 8);
+                        targetCtx.lineTo(this.x + offsetX, armY);
+                        targetCtx.lineTo(this.x + 12 + offsetX, armY - 8);
                     } else {
-                        ctx.moveTo(this.x - 10 + offsetX, armY + 5);
-                        ctx.lineTo(this.x + offsetX, armY);
-                        ctx.lineTo(this.x + 10 + offsetX, armY + 5);
+                        targetCtx.moveTo(this.x - 10 + offsetX, armY + 5);
+                        targetCtx.lineTo(this.x + offsetX, armY);
+                        targetCtx.lineTo(this.x + 10 + offsetX, armY + 5);
                     }
-                    ctx.stroke();
+                    targetCtx.stroke();
                 }
 
                 if (equippedAbility === 'magnet' && magnetLevel > 0 && isMagnetActive && activeCurse !== 'hard') {
                     const magX = this.x + 18 + offsetX;
                     const magY = headY + 12;
 
-                    ctx.strokeStyle = '#aaaaaa';
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    ctx.arc(magX, magY, 6, Math.PI, 0, false);
-                    ctx.stroke();
+                    targetCtx.strokeStyle = '#aaaaaa';
+                    targetCtx.lineWidth = 4;
+                    targetCtx.beginPath();
+                    targetCtx.arc(magX, magY, 6, Math.PI, 0, false);
+                    targetCtx.stroke();
 
-                    ctx.strokeStyle = '#ff2244';
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    ctx.moveTo(magX - 6, magY);
-                    ctx.lineTo(magX - 6, magY + 7);
-                    ctx.stroke();
+                    targetCtx.strokeStyle = '#ff2244';
+                    targetCtx.lineWidth = 4;
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(magX - 6, magY);
+                    targetCtx.lineTo(magX - 6, magY + 7);
+                    targetCtx.stroke();
 
-                    ctx.strokeStyle = '#2266ff';
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    ctx.moveTo(magX + 6, magY);
-                    ctx.lineTo(magX + 6, magY + 7);
-                    ctx.stroke();
+                    targetCtx.strokeStyle = '#2266ff';
+                    targetCtx.lineWidth = 4;
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(magX + 6, magY);
+                    targetCtx.lineTo(magX + 6, magY + 7);
+                    targetCtx.stroke();
 
-                    ctx.fillStyle = '#dddddd';
-                    ctx.fillRect(magX - 8, magY + 7, 4, 2);
-                    ctx.fillRect(magX + 4, magY + 7, 4, 2);
+                    targetCtx.fillStyle = '#dddddd';
+                    targetCtx.fillRect(magX - 8, magY + 7, 4, 2);
+                    targetCtx.fillRect(magX + 4, magY + 7, 4, 2);
                 }
             }
         };
 
         function triggerAbilityE() {
-            if (gameState !== 'PLAYING' || activeCurse === 'hard') return;
+            if (activeGameMode !== 'PLAYING' || activeCurse === 'hard') return;
 
             let cdMult = (activeCurse === 'medium') ? 1.5 : 1.0;
 
@@ -1059,7 +1149,6 @@
                     });
                     abilityCooldownE = Math.floor(15.0 * 60 * cdMult);
                 } else if (hackerLevel === 3) {
-                    // Hacker Level 3 cooldown increased by 5 seconds (28s total base)
                     hackerLvl3Timer = 9.0 * 60;
                     abilityCooldownE = Math.floor(28.0 * 60 * cdMult);
                 }
@@ -1083,7 +1172,7 @@
         }
 
         function triggerAbilityQ() {
-            if (gameState !== 'PLAYING' || activeCurse === 'hard') return;
+            if (activeGameMode !== 'PLAYING' || activeCurse === 'hard') return;
             let cdMult = (activeCurse === 'medium') ? 1.5 : 1.0;
 
             if (equippedAbility === 'slime' && slimeLevel === 2 && abilityCooldownQ <= 0) {
@@ -1108,9 +1197,8 @@
                 .slice(0, count);
         }
 
-        // Curses System Triggers
         function triggerCursePrompt() {
-            gameState = 'CURSE_PROMPT';
+            activeGameMode = 'CURSE_PROMPT';
             obstacles = [];
             curseScreen.classList.remove('hidden');
 
@@ -1122,7 +1210,6 @@
             mediumRewardText.textContent = `+${currentMediumReward} Coin`;
             hardRewardText.textContent = `+${currentHardReward} Coins`;
 
-            // Wizard Level 2 check for special pre-choice modifier menu
             if (equippedAbility === 'wizard' && wizardLevel >= 2) {
                 wizardModifierContainer.classList.remove('hidden');
                 curseOptionsWrapper.classList.add('hidden');
@@ -1156,7 +1243,7 @@
                 activeCurse = null;
                 curseTimer = 0;
                 curseScreen.classList.add('hidden');
-                gameState = 'PLAYING';
+                activeGameMode = 'PLAYING';
                 spawnPausedTimer = 40;
                 return;
             } else if (modifierType === 'faster_curse') {
@@ -1169,16 +1256,14 @@
 
         function selectCurse(type) {
             activeCurse = type;
-            
-            // Base curse duration is 500, Wizard Level 1/2 shortens curse duration down by 150
             let duration = 500;
             if (equippedAbility === 'wizard' && wizardLevel >= 1) {
-                duration -= 150; // 350 total duration
+                duration -= 150;
             }
             curseTimer = duration;
 
             curseScreen.classList.add('hidden');
-            gameState = 'PLAYING';
+            activeGameMode = 'PLAYING';
             spawnPausedTimer = 60;
 
             if (type === 'easy') {
@@ -1200,7 +1285,7 @@
                 activeCurse = null;
                 curseTimer = 0;
                 curseScreen.classList.add('hidden');
-                gameState = 'PLAYING';
+                activeGameMode = 'PLAYING';
                 spawnPausedTimer = 40;
             }
         }
@@ -1213,42 +1298,62 @@
                 return;
             }
 
-            if (e.code === 'Space' || e.code === 'ArrowUp') {
-                e.preventDefault();
-                if (gameState === 'PLAYING') player.jump();
-            }
-            if (e.code === 'KeyS' || e.code === 'ArrowDown') {
-                e.preventDefault();
-                if (gameState === 'PLAYING') player.duck(true);
-            }
-            if (e.code === 'KeyE') {
-                e.preventDefault();
-                triggerAbilityE();
-            }
-            if (e.code === 'KeyQ') {
-                e.preventDefault();
-                triggerAbilityQ();
+            if (activeGameMode === 'PLAYING') {
+                if (e.code === 'Space' || e.code === 'ArrowUp') {
+                    e.preventDefault();
+                    player.jump();
+                }
+                if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+                    e.preventDefault();
+                    player.duck(true);
+                }
+                if (e.code === 'KeyE') {
+                    e.preventDefault();
+                    triggerAbilityE();
+                }
+                if (e.code === 'KeyQ') {
+                    e.preventDefault();
+                    triggerAbilityQ();
+                }
+            } else if (activeGameMode === 'FIGHTING') {
+                if (e.code === 'KeyJ') {
+                    e.preventDefault();
+                    attemptFightAttack('punch');
+                } else if (e.code === 'KeyK') {
+                    e.preventDefault();
+                    attemptFightAttack('kick');
+                }
             }
         });
 
         window.addEventListener('keyup', (e) => {
-            if (e.code === 'KeyS' || e.code === 'ArrowDown') {
-                if (gameState === 'PLAYING') player.duck(false);
+            if (activeGameMode === 'PLAYING') {
+                if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+                    player.duck(false);
+                }
             }
         });
 
         canvas.addEventListener('mousedown', () => {
-            if (gameState === 'PLAYING') player.jump();
+            if (activeGameMode === 'PLAYING') player.jump();
         });
 
         // UI Event Listeners
+        launchJumpHub.addEventListener('click', showJumpHub);
+        launchFightHub.addEventListener('click', showFightHub);
+        backToMasterBtn.addEventListener('click', showMasterHub);
+        fightBackToMasterBtn.addEventListener('click', showMasterHub);
+
         playBtn.addEventListener('click', startGame);
         shopBtn.addEventListener('click', openShop);
-        shopBackBtn.addEventListener('click', showHubMenu);
+        shopBackBtn.addEventListener('click', showJumpHub);
         retryBtn.addEventListener('click', startGame);
-        menuBtn.addEventListener('click', showHubMenu);
+        menuBtn.addEventListener('click', showJumpHub);
 
-        // Shop Buy & Equip Abilities
+        playFightBtn.addEventListener('click', startFightGame);
+        fightRetryBtn.addEventListener('click', startFightGame);
+        fightMenuBtn.addEventListener('click', showFightHub);
+
         buyHackerBtn.addEventListener('click', () => purchaseAbility('hacker'));
         buyMagnetBtn.addEventListener('click', () => purchaseAbility('magnet'));
         buySlimeBtn.addEventListener('click', () => purchaseAbility('slime'));
@@ -1257,11 +1362,10 @@
 
         equipHackerBtn.addEventListener('click', () => equipAbility('hacker'));
         equipMagnetBtn.addEventListener('click', () => equipAbility('magnet'));
-        equipSlimeBtn.addEventListener('click', () => equipAbility('slime'));
+        equipSlimetBtn = equipSlimeBtn.addEventListener('click', () => equipAbility('slime'));
         equipMedicBtn.addEventListener('click', () => equipAbility('medic'));
         equipWizardBtn.addEventListener('click', () => equipAbility('wizard'));
 
-        // Skin Equip Listeners
         skinButtons['default'].addEventListener('click', () => equipSkin('default'));
         skinButtons['green'].addEventListener('click', () => equipSkin('green'));
         skinButtons['pirate'].addEventListener('click', () => equipSkin('pirate'));
@@ -1269,9 +1373,8 @@
         skinButtons['alien'].addEventListener('click', () => equipSkin('alien'));
         skinButtons['gold'].addEventListener('click', () => equipSkin('gold'));
 
-        // Admin Listeners
         adminLoginBtn.addEventListener('click', submitAdminPass);
-        adminPassCancelBtn.addEventListener('click', showHubMenu);
+        adminPassCancelBtn.addEventListener('click', showMasterHub);
         adminPassInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') submitAdminPass();
         });
@@ -1299,6 +1402,7 @@
         resetAllBtn.addEventListener('click', () => {
             totalCoins = 0;
             highScore = 0;
+            fightHighScore = 0;
             hackerLevel = 0;
             magnetLevel = 0;
             slimeLevel = 0;
@@ -1311,7 +1415,7 @@
             alert("All progress has been fully reset!");
         });
 
-        adminExitBtn.addEventListener('click', showHubMenu);
+        adminExitBtn.addEventListener('click', showMasterHub);
 
         function openAdminPassPrompt() {
             adminPassInput.value = '';
@@ -1526,8 +1630,22 @@
             updateShopUI();
         }
 
-        function showHubMenu() {
-            gameState = 'HUB';
+        function showMasterHub() {
+            activeGameMode = 'MASTER_HUB';
+            masterHubScreen.classList.remove('hidden');
+            hubScreen.classList.add('hidden');
+            fightHubScreen.classList.add('hidden');
+            shopScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+            fightGameoverScreen.classList.add('hidden');
+            curseScreen.classList.add('hidden');
+            adminPassScreen.classList.add('hidden');
+            adminPanelScreen.classList.add('hidden');
+            renderThumbnails();
+        }
+
+        function showJumpHub() {
+            activeGameMode = 'HUB';
             hubHighscoreText.textContent = `High Score: ${highScore}`;
             hubCoinsText.textContent = `Total Coins: ${totalCoins}`;
             hubEquippedAbilityText.textContent = `Ability: ${equippedAbility.toUpperCase()}`;
@@ -1541,9 +1659,12 @@
 
             hubEquippedSkinText.textContent = `Skin: ${skinDisplayName}`;
             
+            masterHubScreen.classList.add('hidden');
             hubScreen.classList.remove('hidden');
+            fightHubScreen.classList.add('hidden');
             shopScreen.classList.add('hidden');
             gameoverScreen.classList.add('hidden');
+            fightGameoverScreen.classList.add('hidden');
             curseScreen.classList.add('hidden');
             adminPassScreen.classList.add('hidden');
             adminPanelScreen.classList.add('hidden');
@@ -1551,26 +1672,55 @@
             renderBackgroundOnly();
         }
 
+        function showFightHub() {
+            activeGameMode = 'FIGHT_HUB';
+            fightHighscoreText.textContent = `Best Defeated: ${fightHighScore}`;
+
+            masterHubScreen.classList.add('hidden');
+            hubScreen.classList.add('hidden');
+            fightHubScreen.classList.remove('hidden');
+            shopScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+            fightGameoverScreen.classList.add('hidden');
+            curseScreen.classList.add('hidden');
+            adminPassScreen.classList.add('hidden');
+            adminPanelScreen.classList.add('hidden');
+            resetFightGameValues();
+            renderFightBackgroundOnly();
+        }
+
         function openShop() {
-            gameState = 'SHOP';
+            activeGameMode = 'SHOP';
             updateShopUI();
             shopScreen.classList.remove('hidden');
             hubScreen.classList.add('hidden');
+            fightHubScreen.classList.add('hidden');
+            masterHubScreen.classList.add('hidden');
             gameoverScreen.classList.add('hidden');
+            fightGameoverScreen.classList.add('hidden');
             curseScreen.classList.add('hidden');
             adminPassScreen.classList.add('hidden');
             adminPanelScreen.classList.add('hidden');
         }
 
         function startGame() {
-            gameState = 'PLAYING';
+            activeGameMode = 'PLAYING';
             resetGameValues();
+            masterHubScreen.classList.add('hidden');
             hubScreen.classList.add('hidden');
             shopScreen.classList.add('hidden');
             gameoverScreen.classList.add('hidden');
             curseScreen.classList.add('hidden');
             adminPassScreen.classList.add('hidden');
             adminPanelScreen.classList.add('hidden');
+        }
+
+        function startFightGame() {
+            activeGameMode = 'FIGHTING';
+            resetFightGameValues();
+            masterHubScreen.classList.add('hidden');
+            fightHubScreen.classList.add('hidden');
+            fightGameoverScreen.classList.add('hidden');
         }
 
         function triggerGameOver() {
@@ -1587,7 +1737,7 @@
                 }
             }
 
-            gameState = 'GAMEOVER';
+            activeGameMode = 'GAMEOVER';
             const currentScore = Math.floor(score);
 
             if (currentScore > highScore) {
@@ -1600,6 +1750,18 @@
             highScoreText.textContent = `High Score: ${highScore}`;
             finalCoinsText.textContent = `Total Coins: ${totalCoins}`;
             gameoverScreen.classList.remove('hidden');
+        }
+
+        function triggerFightGameOver() {
+            activeGameMode = 'FIGHT_GAMEOVER';
+            if (fightScore > fightHighScore) {
+                fightHighScore = fightScore;
+            }
+            saveGameData();
+
+            fightFinalScoreText.textContent = `Enemies Defeated: ${fightScore}`;
+            fightHighScoreText.textContent = `Best Defeated: ${fightHighScore}`;
+            fightGameoverScreen.classList.remove('hidden');
         }
 
         function triggerMedicReviveAnimation() {
@@ -1653,6 +1815,13 @@
             medicReviveTimer = 0;
 
             player.reset();
+        }
+
+        function resetFightGameValues() {
+            fightScore = 0;
+            fightEnemies = [];
+            fightSpawnTimer = 0;
+            fightSpeed = 3.5;
         }
 
         function spawnObstacle() {
@@ -1735,6 +1904,41 @@
             });
         }
 
+        function spawnFightEnemy() {
+            const attackType = Math.random() < 0.5 ? 'punch' : 'kick';
+            fightEnemies.push({
+                x: canvas.width + 40,
+                y: GROUND_Y,
+                attackType: attackType,
+                width: 40,
+                height: 50
+            });
+        }
+
+        function attemptFightAttack(attackName) {
+            // Hitbox setup: Big as an enemy stickman right in front of player center (player is at x=120, hitbox approx x: 135 to 185)
+            const boxLeft = 135;
+            const boxRight = 185;
+
+            // Find an enemy inside the hitbox
+            let targetIndex = fightEnemies.findIndex(en => {
+                const enCenter = en.x;
+                return enCenter >= boxLeft && enCenter <= boxRight;
+            });
+
+            if (targetIndex !== -1) {
+                let enemy = fightEnemies[targetIndex];
+                if (enemy.attackType === attackName) {
+                    // Correct attack! Defeat enemy
+                    fightEnemies.splice(targetIndex, 1);
+                    fightScore++;
+                    fightSpeed += 0.05;
+                } else {
+                    // Wrong attack - penalty or fail? Let's make wrong attack defeat you instantly or ignore? Prompt says: "you will have to wait until they are in your hit box... and then you can use the corresponding attack to eliminate them. If an enemy touches you before you destroy it, you lose." Let's penalize or ignore incorrect attacks, or treat wrong attack as a miss / penalty. Let's make wrong attack do nothing or trigger game over if wrong? Let's just require the correct one.
+                }
+            }
+        }
+
         function checkCollision(player, obs) {
             if (obs.hacked || hackerLvl3Timer > 0 || medicReviveTimer > 0) return false;
 
@@ -1770,32 +1974,78 @@
             );
         }
 
-        function drawEnvironment() {
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        function drawEnvironment(targetCtx = ctx) {
+            targetCtx.fillStyle = '#000000';
+            targetCtx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = GRAY_GROUND;
-            ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+            targetCtx.fillStyle = GRAY_GROUND;
+            targetCtx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
 
-            ctx.strokeStyle = '#777777';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(0, GROUND_Y);
-            ctx.lineTo(canvas.width, GROUND_Y);
-            ctx.stroke();
+            targetCtx.strokeStyle = '#777777';
+            targetCtx.lineWidth = 2;
+            targetCtx.beginPath();
+            targetCtx.moveTo(0, GROUND_Y);
+            targetCtx.lineTo(canvas.width, GROUND_Y);
+            targetCtx.stroke();
+        }
+
+        function renderThumbnails() {
+            // Jump thumbnail preview
+            thumbJumpCtx.fillStyle = '#000000';
+            thumbJumpCtx.fillRect(0, 0, 180, 90);
+            thumbJumpCtx.fillStyle = '#555';
+            thumbJumpCtx.fillRect(0, 75, 180, 15);
+            // Stickman drawing
+            thumbJumpCtx.strokeStyle = '#fff';
+            thumbJumpCtx.lineWidth = 2;
+            thumbJumpCtx.beginPath();
+            thumbJumpCtx.arc(50, 45, 8, 0, Math.PI * 2);
+            thumbJumpCtx.moveTo(50, 53);
+            thumbJumpCtx.lineTo(50, 70);
+            thumbJumpCtx.moveTo(50, 58);
+            thumbJumpCtx.lineTo(42, 65);
+            thumbJumpCtx.moveTo(50, 58);
+            thumbJumpCtx.lineTo(58, 65);
+            thumbJumpCtx.moveTo(50, 70);
+            thumbJumpCtx.lineTo(44, 75);
+            thumbJumpCtx.moveTo(50, 70);
+            thumbJumpCtx.lineTo(56, 75);
+            thumbJumpCtx.stroke();
+            // Red obstacle
+            thumbJumpCtx.fillStyle = '#ff2222';
+            thumbJumpCtx.fillRect(120, 50, 25, 25);
+
+            // Fight thumbnail preview
+            thumbFightCtx.fillStyle = '#000000';
+            thumbFightCtx.fillRect(0, 0, 180, 90);
+            thumbFightCtx.fillStyle = '#555';
+            thumbFightCtx.fillRect(0, 75, 180, 15);
+            // Player stickman center
+            thumbFightCtx.strokeStyle = '#fff';
+            thumbFightCtx.lineWidth = 2;
+            thumbFightCtx.beginPath();
+            thumbFightCtx.arc(70, 45, 8, 0, Math.PI * 2);
+            thumbFightCtx.moveTo(70, 53);
+            thumbFightCtx.lineTo(70, 70);
+            thumbFightCtx.stroke();
+            // Enemy stickman right
+            thumbFightCtx.strokeStyle = '#ff2222';
+            thumbFightCtx.beginPath();
+            thumbFightCtx.arc(120, 45, 8, 0, Math.PI * 2);
+            thumbFightCtx.moveTo(120, 53);
+            thumbFightCtx.lineTo(120, 70);
+            thumbFightCtx.stroke();
         }
 
         // Main Game Loop
         function gameLoop() {
-            drawEnvironment();
+            if (activeGameMode === 'PLAYING') {
+                drawEnvironment();
 
-            if (gameState === 'PLAYING') {
                 if (medicReviveTimer > 0) {
                     medicReviveTimer--;
                 } else {
                     gameSpeed += 0.002;
-                    
-                    // Score rate restored back to original lively speed pace
                     let scoreIncr = 0.25; 
                     score += scoreIncr;
 
@@ -2122,6 +2372,109 @@
                     ctx.fillStyle = '#aa00ff';
                     ctx.fillText(`[PASSIVE] Wizard Lvl ${wizardLevel}`, 370, 35);
                 }
+            } else if (activeGameMode === 'FIGHTING') {
+                drawEnvironment();
+
+                fightSpawnTimer++;
+                if (fightSpawnTimer >= fightNextSpawn) {
+                    spawnFightEnemy();
+                    fightSpawnTimer = 0;
+                    fightNextSpawn = Math.max(50, Math.floor(120 - fightSpeed * 10));
+                }
+
+                fightSpeed += 0.001;
+
+                // Draw central stationary fighter
+                const fighterX = 120;
+                ctx.strokeStyle = '#00ff66';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(fighterX, GROUND_Y - 50, 12, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(fighterX, GROUND_Y - 38);
+                ctx.lineTo(fighterX, GROUND_Y - 15);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(fighterX, GROUND_Y - 15);
+                ctx.lineTo(fighterX - 8, GROUND_Y);
+                ctx.moveTo(fighterX, GROUND_Y - 15);
+                ctx.lineTo(fighterX + 8, GROUND_Y);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(fighterX, GROUND_Y - 30);
+                ctx.lineTo(fighterX + 15, GROUND_Y - 25);
+                ctx.stroke();
+
+                // Draw Hitbox in front of player (big as an enemy stickman: width ~40, height ~50)
+                const boxX = 135;
+                const boxY = GROUND_Y - 50;
+                const boxW = 50;
+                const boxH = 50;
+
+                // Check if almost half of an enemy is inside the hitbox
+                let isHitboxGreen = false;
+                for (let i = 0; i < fightEnemies.length; i++) {
+                    const en = fightEnemies[i];
+                    // Enemy center is en.x
+                    const enOverlap = en.x;
+                    if (enOverlap >= boxX && enOverlap <= boxX + boxW) {
+                        isHitboxGreen = true;
+                        break;
+                    }
+                }
+
+                ctx.strokeStyle = isHitboxGreen ? '#00ff66' : '#ff2222';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+                // Update and draw enemies
+                for (let i = fightEnemies.length - 1; i >= 0; i--) {
+                    const en = fightEnemies[i];
+                    en.x -= fightSpeed;
+
+                    // Draw Enemy Stickman
+                    ctx.strokeStyle = '#ff2222';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(en.x, GROUND_Y - 50, 12, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(en.x, GROUND_Y - 38);
+                    ctx.lineTo(en.x, GROUND_Y - 15);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(en.x, GROUND_Y - 15);
+                    ctx.lineTo(en.x - 8, GROUND_Y);
+                    ctx.moveTo(en.x, GROUND_Y - 15);
+                    ctx.lineTo(en.x + 8, GROUND_Y);
+                    ctx.stroke();
+
+                    // Draw Symbol Over Head (Punch or Kick)
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 16px sans-serif';
+                    let symbolText = en.attackType === 'punch' ? '👊 [J]' : '🦵 [K]';
+                    ctx.fillText(symbolText, en.x - 22, GROUND_Y - 70);
+
+                    // If enemy touches you (reaches player x <= fighterX + 15), game over
+                    if (en.x <= fighterX + 15) {
+                        triggerFightGameOver();
+                    }
+                }
+
+                // Render Fight HUD
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.fillText(`Defeated: ${fightScore}`, 20, 35);
+                ctx.fillStyle = '#00e676';
+                ctx.fillText(`Best: ${fightHighScore}`, 180, 35);
+                ctx.fillStyle = '#ff2222';
+                ctx.fillText(`CONTROLS -> J: PUNCH | K: KICK`, 450, 35);
             }
 
             requestAnimationFrame(gameLoop);
@@ -2132,7 +2485,27 @@
             player.draw();
         }
 
-        showHubMenu();
+        function renderFightBackgroundOnly() {
+            drawEnvironment();
+            const fighterX = 120;
+            ctx.strokeStyle = '#00ff66';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(fighterX, GROUND_Y - 50, 12, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(fighterX, GROUND_Y - 38);
+            ctx.lineTo(fighterX, GROUND_Y - 15);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(fighterX, GROUND_Y - 15);
+            ctx.lineTo(fighterX - 8, GROUND_Y);
+            ctx.moveTo(fighterX, GROUND_Y - 15);
+            ctx.lineTo(fighterX + 8, GROUND_Y);
+            ctx.stroke();
+        }
+
+        showMasterHub();
         requestAnimationFrame(gameLoop);
     </script>
 </body>
