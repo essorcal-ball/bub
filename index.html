@@ -832,6 +832,8 @@
         let fightSpawnTimer = 0;
         let fightNextSpawn = 120;
         let fightSpeed = 3.5;
+        let playerAttackAction = null; // 'punch', 'kick', or null
+        let playerAttackTimer = 0;
 
         // Curses System State
         let activeCurse = null;
@@ -1822,6 +1824,8 @@
             fightEnemies = [];
             fightSpawnTimer = 0;
             fightSpeed = 3.5;
+            playerAttackAction = null;
+            playerAttackTimer = 0;
         }
 
         function spawnObstacle() {
@@ -1916,9 +1920,12 @@
         }
 
         function attemptFightAttack(attackName) {
-            // Hitbox setup: Big as an enemy stickman right in front of player center (player is at x=120, hitbox approx x: 135 to 185)
-            const boxLeft = 135;
-            const boxRight = 185;
+            playerAttackAction = attackName;
+            playerAttackTimer = 15; // Animation frames duration
+
+            // Hitbox setup: slightly away from player, tiniest taller and longer
+            const boxLeft = 140;
+            const boxRight = 195;
 
             // Find an enemy inside the hitbox
             let targetIndex = fightEnemies.findIndex(en => {
@@ -1929,12 +1936,9 @@
             if (targetIndex !== -1) {
                 let enemy = fightEnemies[targetIndex];
                 if (enemy.attackType === attackName) {
-                    // Correct attack! Defeat enemy
                     fightEnemies.splice(targetIndex, 1);
                     fightScore++;
                     fightSpeed += 0.05;
-                } else {
-                    // Wrong attack - penalty or fail? Let's make wrong attack defeat you instantly or ignore? Prompt says: "you will have to wait until they are in your hit box... and then you can use the corresponding attack to eliminate them. If an enemy touches you before you destroy it, you lose." Let's penalize or ignore incorrect attacks, or treat wrong attack as a miss / penalty. Let's make wrong attack do nothing or trigger game over if wrong? Let's just require the correct one.
                 }
             }
         }
@@ -2383,20 +2387,30 @@
                 }
 
                 fightSpeed += 0.001;
+                if (playerAttackTimer > 0) {
+                    playerAttackTimer--;
+                    if (playerAttackTimer === 0) {
+                        playerAttackAction = null;
+                    }
+                }
 
-                // Draw central stationary fighter
+                // Draw central stationary fighter with punch/kick animations
                 const fighterX = 120;
                 ctx.strokeStyle = '#00ff66';
                 ctx.lineWidth = 3;
+                
+                // Head
                 ctx.beginPath();
                 ctx.arc(fighterX, GROUND_Y - 50, 12, 0, Math.PI * 2);
                 ctx.stroke();
 
+                // Body
                 ctx.beginPath();
                 ctx.moveTo(fighterX, GROUND_Y - 38);
                 ctx.lineTo(fighterX, GROUND_Y - 15);
                 ctx.stroke();
 
+                // Legs
                 ctx.beginPath();
                 ctx.moveTo(fighterX, GROUND_Y - 15);
                 ctx.lineTo(fighterX - 8, GROUND_Y);
@@ -2404,22 +2418,32 @@
                 ctx.lineTo(fighterX + 8, GROUND_Y);
                 ctx.stroke();
 
+                // Arms / Animation
                 ctx.beginPath();
-                ctx.moveTo(fighterX, GROUND_Y - 30);
-                ctx.lineTo(fighterX + 15, GROUND_Y - 25);
+                if (playerAttackAction === 'punch') {
+                    // Punching arm extended forward
+                    ctx.moveTo(fighterX, GROUND_Y - 30);
+                    ctx.lineTo(fighterX + 30, GROUND_Y - 30);
+                } else if (playerAttackAction === 'kick') {
+                    // Kicking leg extended forward
+                    ctx.moveTo(fighterX, GROUND_Y - 15);
+                    ctx.lineTo(fighterX + 30, GROUND_Y - 20);
+                } else {
+                    // Normal idle arms
+                    ctx.moveTo(fighterX, GROUND_Y - 30);
+                    ctx.lineTo(fighterX + 15, GROUND_Y - 25);
+                }
                 ctx.stroke();
 
-                // Draw Hitbox in front of player (big as an enemy stickman: width ~40, height ~50)
-                const boxX = 135;
-                const boxY = GROUND_Y - 50;
-                const boxW = 50;
-                const boxH = 50;
+                // Draw Hitbox (slightly away from player, tiniest taller and longer)
+                const boxX = 138;
+                const boxY = GROUND_Y - 53;
+                const boxW = 54;
+                const boxH = 54;
 
-                // Check if almost half of an enemy is inside the hitbox
                 let isHitboxGreen = false;
                 for (let i = 0; i < fightEnemies.length; i++) {
                     const en = fightEnemies[i];
-                    // Enemy center is en.x
                     const enOverlap = en.x;
                     if (enOverlap >= boxX && enOverlap <= boxX + boxW) {
                         isHitboxGreen = true;
@@ -2461,7 +2485,6 @@
                     let symbolText = en.attackType === 'punch' ? '👊 [J]' : '🦵 [K]';
                     ctx.fillText(symbolText, en.x - 22, GROUND_Y - 70);
 
-                    // If enemy touches you (reaches player x <= fighterX + 15), game over
                     if (en.x <= fighterX + 15) {
                         triggerFightGameOver();
                     }
